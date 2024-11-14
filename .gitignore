@@ -44,3 +44,5 @@ crypto_data.csv
 
 # Ignore API key config file
 config.py
+
+ttx.1

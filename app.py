@@ -6,19 +6,22 @@ from source.forecast import arimax_forecast
 import matplotlib.pyplot as plt
 from source.data_processing import load_and_process_data, save_to_csv
 from datetime import datetime
+from source.config import API_KEY
 
 def main():
-    api_key = 'your_api_key'
+    api_key = API_KEY
     symbol = 'ETH'
     currency = 'USD'
     aggregate = 5
     limit = 2000
     days_back = 100
 
+    #API call to get the data
     #fetch_historical_data(api_key, symbol, currency, aggregate, limit, days_back)  
-    
+
+
     json_file = 'historical_data.json' 
-    csv_file = 'your_path/crypto_data.csv'
+    csv_file = 'crypto_data.csv'
     df = load_and_process_data(json_file)
     #save_to_csv(df, 'crypto_data.csv')
     arimax_forecast(csv_file)
