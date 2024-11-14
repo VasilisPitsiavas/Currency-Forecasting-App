@@ -14,7 +14,6 @@ current_price.json
 __pycache__/
 
 # Ignore Docker-specific files if they are generated during build (optional)
-# Uncomment if Dockerfile is generated and not part of version control
 #Dockerfile
 
 # Ignore any environment-specific settings and IDE configs
@@ -25,5 +24,20 @@ __pycache__/
 *.log
 
 # Ignore any other development environment folders if not part of the repository
-# For example, if using Jupyter notebooks, ignore checkpoints
 .ipynb_checkpoints
+
+# Python bytecode
+*.pyc
+
+# Environment variables and sensitive data
+.env
+config.json
+config.yaml
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Dataset
+crypto_data.csv

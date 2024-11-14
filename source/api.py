@@ -41,9 +41,9 @@ def fetch_historical_data(api_key, symbol='ETH', currency='USD', aggregate=10, l
         data = response.json()['Data']['Data']
         if not data:
             print("No data found. The time range might be too large or the API might not support it.")
-        save_to_json(data, 'historical_data.json')  # Save to JSON file
+        save_to_json(data, 'historical_data.json') 
         df = pd.DataFrame(data)
-        df['time'] = pd.to_datetime(df['time'], unit='s')  # Convert timestamps to datetime
+        df['time'] = pd.to_datetime(df['time'], unit='s')  
         return df[['time', 'close']]
     else:
         print(f"Error fetching historical data: {response.status_code} - {response.text}")

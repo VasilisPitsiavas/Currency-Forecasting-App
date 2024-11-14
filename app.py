@@ -8,7 +8,7 @@ from source.data_processing import load_and_process_data, save_to_csv
 from datetime import datetime
 
 def main():
-    api_key = 'ff516c6fbb6924b87fe43d32dd038266a4236489c1b7fda5b75e76f22548ba28'
+    api_key = 'your_api_key'
     symbol = 'ETH'
     currency = 'USD'
     aggregate = 5
@@ -18,7 +18,7 @@ def main():
     #fetch_historical_data(api_key, symbol, currency, aggregate, limit, days_back)  
     
     json_file = 'historical_data.json' 
-    csv_file = '/Users/vasilispitsiavas/Documents/currency-forecasting-app/currency-forecasting-app/crypto_data.csv'
+    csv_file = 'your_path/crypto_data.csv'
     df = load_and_process_data(json_file)
     #save_to_csv(df, 'crypto_data.csv')
     arimax_forecast(csv_file)
