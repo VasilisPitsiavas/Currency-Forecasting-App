@@ -41,3 +41,6 @@ config.yaml
 
 # Dataset
 crypto_data.csv
+
+# Ignore API key config file
+config.py
