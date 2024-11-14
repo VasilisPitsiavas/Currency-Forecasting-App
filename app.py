@@ -42,9 +42,8 @@ def run_model(csv_file, model_choice):
     """
     if model_choice == 'arimax':
         print("Running ARIMAX model...")
-        arimax_forecast(csv_file)  
-
         return arimax_forecast(csv_file)
+    
     elif model_choice == 'xgboost':
         print("Running XGBoost model...")
         return xgboost_forecast(csv_file)
