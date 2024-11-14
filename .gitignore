@@ -1,0 +1,29 @@
+# Ignore virtual environment folders and config files
+bin/
+include/
+lib/
+pyvenv.cfg
+
+# Ignore generated or temporary data files
+crypto_data.csv
+historical_data.json
+current_price.json
+
+# Ignore compiled Python files
+*.pyc
+__pycache__/
+
+# Ignore Docker-specific files if they are generated during build (optional)
+# Uncomment if Dockerfile is generated and not part of version control
+#Dockerfile
+
+# Ignore any environment-specific settings and IDE configs
+.vscode/
+.idea/
+
+# Ignore logs and temporary files
+*.log
+
+# Ignore any other development environment folders if not part of the repository
+# For example, if using Jupyter notebooks, ignore checkpoints
+.ipynb_checkpoints
