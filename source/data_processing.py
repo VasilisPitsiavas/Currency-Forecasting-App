@@ -15,5 +15,9 @@ def load_and_process_data(json_file):
     return df
 
 def save_to_csv(df, output_filename):
-    df.to_csv(output_filename, index=False)
+    """
+    Saves the entire DataFrame to a CSV file.
+   
+    """
+    df.to_csv(output_filename, index=False)  
     print(f"Data saved to {output_filename}")
