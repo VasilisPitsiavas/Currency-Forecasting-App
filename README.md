@@ -10,9 +10,10 @@ By leveraging historical market data and external variables, the app aims to pro
 
 - **Real-Time Data Fetching**: Automatically fetches current cryptocurrency price data through an API.
 - **Historical Data Loading**: Loads and processes historical price data to train the forecasting model.
-- **ARIMAX Model**: Trains an ARIMAX (AutoRegressive Integrated Moving Average with Exogenous Variables) model for price prediction, using external factors like trading volume, high and low market prices.
+- **ARIMAX Model**: Forecasts the price using the ARIMAX model, considering external features such as volume and price history.
+- **XGBoost Model**: Forecasts the price using the XGBoost algorithm with additional functionalities like grid search for hyperparameter tuning and lag feature creation.
 - **Hyperparameter Tuning**: Performs grid search to optimize model hyperparameters and find the best configuration.
-- **Data Visualization**: Visualizes the actual and predicted values for better comparison.
+- **Data Visualization**:  The app visualizes the predictions, allowing users to easily compare model outputs with actual data.
 
 ## Prerequisites
 
