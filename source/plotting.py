@@ -5,11 +5,6 @@ def plot_actual_vs_predicted(y_true, y_pred, title="Actual vs Predicted", xlabel
     """
     Plots the actual vs predicted values.
 
-    :param y_true: Actual values (ground truth).
-    :param y_pred: Predicted values.
-    :param title: Title of the plot.
-    :param xlabel: Label for the x-axis.
-    :param ylabel: Label for the y-axis.
     """
     plt.figure(figsize=(10, 6))
     plt.plot(y_true, label="Actual", color="blue")
@@ -24,9 +19,6 @@ def plot_feature_importance(model, features, title="Feature Importance"):
     """
     Plots the feature importance for the XGBoost model.
 
-    :param model: Trained XGBoost model.
-    :param features: List of feature names.
-    :param title: Title of the plot.
     """
     import xgboost as xgb
     importance = model.get_booster().get_score(importance_type='weight')
@@ -49,11 +41,6 @@ def plot_forecast_comparison(df, forecast, title="Forecast Comparison", xlabel="
     """
     Plots the comparison between the actual data and forecasted values.
     
-    :param df: DataFrame with actual values (should include time and target column).
-    :param forecast: The forecasted values (should be a pandas Series or array).
-    :param title: Title of the plot.
-    :param xlabel: Label for the x-axis.
-    :param ylabel: Label for the y-axis.
     """
     plt.figure(figsize=(10, 6))
     plt.plot(df.index, df['close'], label="Actual", color="blue")
