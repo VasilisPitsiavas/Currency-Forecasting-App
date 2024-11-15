@@ -19,12 +19,27 @@ def preprocess_data(data):
     return target, exog
 
 def split_data(target, exog, train_ratio=0.8):
-    """Split target and exogenous variables into train and test sets."""
+    """
+    Split target and exogenous variables into train and test sets.
+
+    Ensures test_target and test_exog have the same length, using slicing.
+    """
+    # Calculate split index
     split_idx = int(len(target) * train_ratio)
-    train_target = target[:split_idx]
-    test_target = target[split_idx:]
-    train_exog = exog[:split_idx]
-    test_exog = exog[split_idx:]
+    
+    # Use iloc for slicing to ensure compatibility with pandas Series/DataFrame
+    train_target = target.iloc[:split_idx]
+    test_target = target.iloc[split_idx:]
+    train_exog = exog.iloc[:split_idx]
+    test_exog = exog.iloc[split_idx:]
+    
+    # Adjust lengths if necessary
+    if len(test_target) != len(test_exog):
+        print(f"Warning: Test target length ({len(test_target)}) and test exog length ({len(test_exog)}) differ!")
+        min_length = min(len(test_target), len(test_exog))
+        test_target = test_target.iloc[:min_length]
+        test_exog = test_exog.iloc[:min_length]
+    
     return train_target, test_target, train_exog, test_exog
 
 def grid_search_arimax(train_target, train_exog, p_range=(0, 2), d_range=(0, 2), q_range=(0, 2)):
@@ -53,9 +68,9 @@ def fit_arimax_model(train_target, train_exog, order):
     model_fit = model.fit()
     return model_fit
 
-def make_predictions(model_fit, test_exog, steps):
+def make_predictions(model_fit, test_exog):
     """Make predictions using the fitted ARIMAX model."""
-    predictions = model_fit.predict(start=test_exog.index[0], end=test_exog.index[-1], exog=test_exog)
+    predictions = model_fit.forecast(steps=len(test_exog), exog=test_exog[-len(test_exog):])
     return predictions
 
 def evaluate_model(test_target, predictions):
@@ -86,13 +101,25 @@ def arimax_forecast(file_path):
     
     arimax_model = fit_arimax_model(train_target, train_exog, order=best_order)
     
-    predictions = make_predictions(arimax_model, test_exog, len(test_target))
+    predictions = make_predictions(arimax_model, test_exog)
     
     error = evaluate_model(test_target, predictions)
     print(f'RMSE: {error}')
-    
-    #plot_results(test_target, predictions)
 
     predictions_list = predictions.tolist()
 
-    return predictions_list
+    print("Length of predictions:", len(predictions))
+    print("Length of actual values:", len(test_exog))
+    print("Length of timestamps:", len(test_exog))
+
+    
+    
+    result = pd.DataFrame({
+        'time': test_target.index,
+        'actual': test_target.values,
+        'predicted': predictions
+    })
+   
+    result.to_csv('predictions_output.csv', index=False)
+    
+    return result
