@@ -4,7 +4,7 @@ import pandas as pd
 #import matplotlib.pyplot as plt
 from datetime import datetime
 from source.api import fetch_historical_data
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, jsonify
 from source.models.arimax_forecast import arimax_forecast
 from source.models.xgboost_forecast import xgboost_forecast
 from source.config import API_KEY
@@ -12,7 +12,12 @@ from source.api import fetch_historical_data
 import os 
 
 
+
 app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 ''' 
 def main():
     api_key = API_KEY
@@ -89,7 +94,9 @@ def predict():
     else:
         return jsonify({'error': 'Invalid model choice. Choose "arimax" or "xgboost".'}), 400
 
-    return jsonify(predictions)
+
+    predictions_list = predictions.to_dict(orient='records')
+    return render_template('predictions.html', model_choice=model_choice, predictions=predictions_list)
 
 @app.route('/extract_value', methods=['GET'])
 def extract_current_value():
