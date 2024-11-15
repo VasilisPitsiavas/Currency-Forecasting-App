@@ -55,7 +55,7 @@ def fit_arimax_model(train_target, train_exog, order):
 
 def make_predictions(model_fit, test_exog, steps):
     """Make predictions using the fitted ARIMAX model."""
-    predictions = model_fit.predict(start=test_exog.index[0], end=test_exog.index[-1], exog=test_exog, dynamic=False)
+    predictions = model_fit.predict(start=test_exog.index[0], end=test_exog.index[-1], exog=test_exog)
     return predictions
 
 def evaluate_model(test_target, predictions):
@@ -91,4 +91,8 @@ def arimax_forecast(file_path):
     error = evaluate_model(test_target, predictions)
     print(f'RMSE: {error}')
     
-    plot_results(test_target, predictions)
+    #plot_results(test_target, predictions)
+
+    predictions_list = predictions.tolist()
+
+    return predictions_list
