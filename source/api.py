@@ -10,7 +10,6 @@ def fetch_historical_data(api_key, symbol='ETH', currency='USD', aggregate=10, l
     Fetches historical minute data of a cryptocurrency from the specified time range.
     
     """
-    
     to_timestamp = int(datetime.now(timezone.utc).timestamp())
     from_timestamp = int((datetime.now(timezone.utc) - timedelta(days=days_back)).timestamp())
 
@@ -40,14 +39,15 @@ def fetch_historical_data(api_key, symbol='ETH', currency='USD', aggregate=10, l
         print("No data found. The time range might be too large or the API might not support it.")
         return None
 
-    save_to_json(data, f'historical_data_{symbol}_{currency}_{aggregate}min_{days_back}d.json')
+    #save_to_json(data, f'historical_data_{symbol}_{currency}_{aggregate}min_{days_back}d.json')
 
     print(data)
 
     df = pd.DataFrame(data)
     df['time'] = pd.to_datetime(df['time'], unit='s')  # Convert timestamps to datetime
+    df.to_csv(f'crypto_data_{symbol}_{currency}.csv', index=False)
 
-    return df
+    return df, f'crypto_data_{symbol}_{currency}.csv'
 
 def fetch_current_price(api_key, symbol='ETH', currency='USD'):
     """
