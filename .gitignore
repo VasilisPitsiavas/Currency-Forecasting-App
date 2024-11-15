@@ -46,5 +46,11 @@ crypto_data.csv
 config.py
 
 ttx.1
-
+crypto_data
 extra_functionalities
+crypto_data1
+historical_data_eth_usd_5min_10d
+historical_data_eth_usd_5min_100d
+historical_data
+historical_data_eth_usd_5min_100d
+
