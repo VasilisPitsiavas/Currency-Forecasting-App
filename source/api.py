@@ -45,9 +45,9 @@ def fetch_historical_data(api_key, symbol='ETH', currency='USD', aggregate=10, l
 
     df = pd.DataFrame(data)
     df['time'] = pd.to_datetime(df['time'], unit='s')  # Convert timestamps to datetime
-    df.to_csv(f'crypto_data_{symbol}_{currency}.csv', index=False)
+    df.to_csv(f'crypto_data_{symbol}_{currency}1.csv', index=False)
 
-    return df, f'crypto_data_{symbol}_{currency}.csv'
+    return df
 
 def fetch_current_price(api_key, symbol='ETH', currency='USD'):
     """
