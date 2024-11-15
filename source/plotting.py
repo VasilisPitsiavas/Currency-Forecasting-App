@@ -1,19 +1,26 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import io
+import base64
 
-def plot_actual_vs_predicted(y_true, y_pred, title="Actual vs Predicted", xlabel="Time", ylabel="Price"):
-    """
-    Plots the actual vs predicted values.
-
-    """
-    plt.figure(figsize=(10, 6))
-    plt.plot(y_true, label="Actual", color="blue")
-    plt.plot(y_pred, label="Predicted", color="red", linestyle="--")
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+def visualize_predictions(result_df):
+    plt.figure(figsize=(12, 6))
+    plt.plot(result_df['time'], result_df['actual'], label='Actual', color='blue')
+    plt.plot(result_df['time'], result_df['predicted'], label='Predicted', color='red')
+    plt.xlabel('Minute Intervals')
+    plt.ylabel('Cryptocurrency value')
+    plt.title('Actual vs Predicted')
     plt.legend()
+    plt.grid(True)
     plt.show()
+
+    img = io.BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    plot_url = base64.b64encode(img.getvalue()).decode('utf8')
+
+    return plot_url
+
 
 def plot_feature_importance(model, features, title="Feature Importance"):
     """

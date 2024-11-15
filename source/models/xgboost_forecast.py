@@ -3,7 +3,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV
 import numpy as np
 import pandas as pd
-from source.plotting import plot_actual_vs_predicted, plot_forecast_comparison
+from source.plotting import visualize_predictions , plot_forecast_comparison
 
 
 def create_lagged_features(df, target_column, lags=[1, 2, 3]):
@@ -64,5 +64,5 @@ def xgboost_forecast(file_path, target_column='close', lags=[1, 2, 3]):
     #plot_actual_vs_predicted(y_test, preds)
 
     # Plot the forecast comparison (actual vs forecasted)
-    plot_forecast_comparison(df, preds)
+    #plot_forecast_comparison(df, preds)
     return preds

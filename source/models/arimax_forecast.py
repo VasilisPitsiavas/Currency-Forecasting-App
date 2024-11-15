@@ -106,7 +106,7 @@ def arimax_forecast(file_path):
     error = evaluate_model(test_target, predictions)
     print(f'RMSE: {error}')
 
-    predictions_list = predictions.tolist()
+    #predictions_list = predictions.tolist()
 
     print("Length of predictions:", len(predictions))
     print("Length of actual values:", len(test_exog))

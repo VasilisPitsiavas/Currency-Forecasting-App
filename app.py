@@ -9,6 +9,7 @@ from source.models.arimax_forecast import arimax_forecast
 from source.models.xgboost_forecast import xgboost_forecast
 from source.config import API_KEY
 from source.api import fetch_historical_data
+from source.plotting import visualize_predictions
 import os 
 
 
@@ -59,9 +60,13 @@ def fetch_data():
     print(f"Fetching data for {symbol} in {currency} with {aggregate}-minute aggregation, {days_back} days back.")
 
     if df is None:
-        return jsonify({'error': 'Unable to fetch data'}), 500
+            return jsonify({"error": "No data available for the specified range."}), 400
 
-    return df.to_json(orient='records')
+    try:
+        return df.to_json(orient='records')
+    except Exception as e:
+        print(f"Error converting DataFrame to JSON: {e}")
+    return jsonify({"error": "Failed to process data."}), 500
 
 ''' 
 def fetch_data(api_key, symbol, currency, aggregate, limit, days_back):
@@ -94,7 +99,7 @@ def predict():
     else:
         return jsonify({'error': 'Invalid model choice. Choose "arimax" or "xgboost".'}), 400
 
-
+    #plot_url = visualize_predictions(predictions)
     predictions_list = predictions.to_dict(orient='records')
     return render_template('predictions.html', model_choice=model_choice, predictions=predictions_list)
 
