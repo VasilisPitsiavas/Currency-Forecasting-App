@@ -14,7 +14,6 @@ from source.data_processing import save_to_csv
 
 
 def main():
-    # API key (assumed to be securely stored and retrieved)
     api_key = API_KEY
     
     # User inputs for cryptocurrency, currency, and time period
