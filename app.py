@@ -12,8 +12,6 @@ from source.api import fetch_historical_data
 from source.plotting import visualize_predictions
 import os 
 
-
-
 app = Flask(__name__)
 
 @app.route('/')
@@ -47,26 +45,31 @@ def main():
     #extract_current_value(df, query_time)
 '''
 
-@app.route('/fetch', methods=['GET'])
+@app.route('/fetch', methods=['GET', 'POST'])
 def fetch_data():
-    api_key = API_KEY 
-    symbol = request.args.get('symbol', 'ETH')  
-    currency = request.args.get('currency', 'USD') 
-    aggregate = int(request.args.get('aggregate', 10))
-    limit = int(request.args.get('limit', 2000))
-    days_back = int(request.args.get('days_back', 30))
+    if request.method == 'POST':
+        # Get user input from the form
+        api_key = API_KEY  # Replace with your actual API key
+        symbol = request.form.get('symbol', 'ETH')
+        currency = request.form.get('currency', 'USD')
+        aggregate = int(request.form.get('aggregate', 10))
+        limit = int(request.form.get('limit', 2000))
+        days_back = int(request.form.get('days_back', 30))
 
-    df = fetch_historical_data(api_key, symbol, currency, aggregate, limit, days_back)
-    print(f"Fetching data for {symbol} in {currency} with {aggregate}-minute aggregation, {days_back} days back.")
+        df = fetch_historical_data(api_key, symbol, currency, aggregate, limit, days_back)
+        print(f"Fetching data for {symbol} in {currency} with {aggregate}-minute aggregation, {days_back} days back.")
 
-    if df is None:
+        if df is None or df.empty:
             return jsonify({"error": "No data available for the specified range."}), 400
 
-    try:
-        return df.to_json(orient='records')
-    except Exception as e:
-        print(f"Error converting DataFrame to JSON: {e}")
-    return jsonify({"error": "Failed to process data."}), 500
+        try:
+            data = df.to_dict(orient='records')
+            return render_template('display_data.html', data=data, symbol=symbol, currency=currency)
+        except Exception as e:
+            print(f"Error converting DataFrame to JSON: {e}")
+            return jsonify({"error": "Failed to process data."}), 500
+
+    return render_template('fetch_form.html')
 
 ''' 
 def fetch_data(api_key, symbol, currency, aggregate, limit, days_back):
