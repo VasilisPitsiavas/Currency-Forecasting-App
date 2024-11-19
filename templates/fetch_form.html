@@ -3,27 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fetch Data</title>
+    <title>Fetch Historical Data</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Include Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 50px;
+            max-width: 600px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 1.8rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .btn-primary {
+            width: 100%;
+        }
+        #responseContainer {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .spinner {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-    <h1>Fetch Historical Data</h1>
-    <form action="/fetch" method="POST">
-        <label for="symbol">Cryptocurrency Symbol:</label>
-        <input type="text" id="symbol" name="symbol" value="ETH"><br><br>
+    <div class="container">
+        <h1>Fetch Historical Data</h1>
+        <form id="fetchForm">
+            <div class="mb-3">
+                <label for="symbol" class="form-label">Cryptocurrency Symbol:</label>
+                <input type="text" id="symbol" name="symbol" class="form-control" value="ETH" required>
+                <div class="form-text">Enter the cryptocurrency symbol (e.g., BTC, ETH).</div>
+            </div>
 
-        <label for="currency">Currency:</label>
-        <input type="text" id="currency" name="currency" value="USD"><br><br>
+            <div class="mb-3">
+                <label for="currency" class="form-label">Currency:</label>
+                <input type="text" id="currency" name="currency" class="form-control" value="USD" required>
+                <div class="form-text">Enter the currency (e.g., USD, EUR).</div>
+            </div>
 
-        <label for="aggregate">Aggregation Interval (minutes):</label>
-        <input type="number" id="aggregate" name="aggregate" value="10"><br><br>
+            <div class="mb-3">
+                <label for="aggregate" class="form-label">Aggregation Interval (minutes):</label>
+                <input type="number" id="aggregate" name="aggregate" class="form-control" value="10" min="1" required>
+                <div class="form-text">Time interval for data aggregation in minutes.</div>
+            </div>
 
-        <label for="limit">Limit (max data points):</label>
-        <input type="number" id="limit" name="limit" value="2000"><br><br>
+            <div class="mb-3">
+                <label for="limit" class="form-label">Limit (max data points):</label>
+                <input type="number" id="limit" name="limit" class="form-control" value="2000" min="1" required>
+                <div class="form-text">Maximum number of data points to fetch.</div>
+            </div>
 
-        <label for="days_back">Days Back:</label>
-        <input type="number" id="days_back" name="days_back" value="30"><br><br>
+            <div class="mb-3">
+                <label for="days_back" class="form-label">Days Back:</label>
+                <input type="number" id="days_back" name="days_back" class="form-control" value="30" min="1" required>
+                <div class="form-text">Number of days back to fetch data from.</div>
+            </div>
 
-        <button type="submit">Fetch Data</button>
-    </form>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-download"></i> Fetch Data
+            </button>
+        </form>
+        
+        <!-- Loading Spinner -->
+        <div class="spinner" id="loadingSpinner">
+            <i class="fas fa-spinner fa-spin fa-3x"></i>
+            <p>Fetching data, please wait...</p>
+        </div>
+
+        <!-- Response Container -->
+        <div id="responseContainer" class="mt-4">
+            <!-- The response or errors will be displayed here -->
+        </div>
+    </div>
+
+    <!-- Include Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Include Font Awesome -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <!-- JavaScript for dynamic behavior -->
+    <script>
+        const fetchForm = document.getElementById('fetchForm');
+        const responseContainer = document.getElementById('responseContainer');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        fetchForm.addEventListener('submit', async function (event) {
+            event.preventDefault(); // Prevent default form submission
+            responseContainer.innerHTML = ''; // Clear previous responses
+            loadingSpinner.style.display = 'block'; // Show the spinner
+
+            const formData = new FormData(fetchForm);
+            const params = new URLSearchParams();
+
+            // Append all form data to params
+            formData.forEach((value, key) => {
+                params.append(key, value);
+            });
+
+            // Fetch data using POST request
+            try {
+                const response = await fetch(`/fetch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString(),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data');
+                }
+
+                const data = await response.json();
+
+                // Display data as a table
+                const tableHTML = `
+                    <table class="table table-striped mt-4">
+                        <thead>
+                            <tr>
+                                ${Object.keys(data[0]).map(key => `<th>${key}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(row => `
+                                <tr>
+                                    ${Object.values(row).map(value => `<td>${value}</td>`).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                responseContainer.innerHTML = tableHTML;
+                responseContainer.classList.remove('alert-danger');
+                responseContainer.classList.add('alert', 'alert-success');
+            } catch (error) {
+                responseContainer.innerHTML = `<p>${error.message}</p>`;
+                responseContainer.classList.remove('alert-success');
+                responseContainer.classList.add('alert', 'alert-danger');
+            } finally {
+                loadingSpinner.style.display = 'none'; // Hide the spinner
+            }
+        });
+    </script>
 </body>
 </html>
