@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import os
 from source.data_processing import load_and_process_data
 
-def fetch_historical_data(api_key, symbol='ETH', currency='USD', aggregate=10, limit=2000, days_back=30):
+def fetch_historical_data(api_key, symbols=['ETH', 'BTC', 'DOGE'], currency='USD', aggregate=10, limit=2000, days_back=30):
     """
     Fetches historical minute data of a cryptocurrency from the specified time range.
     
@@ -17,26 +17,28 @@ def fetch_historical_data(api_key, symbol='ETH', currency='USD', aggregate=10, l
 
     url = 'https://min-api.cryptocompare.com/data/v2/histominute'
     
-    params = {
-        'fsym': symbol,
-        'tsym': currency,
-        'limit': limit,
-        'aggregate': aggregate,
-        'toTs': to_timestamp,
-        'e': 'CCCAGG',  
-        'api_key': api_key
-    }
+    all_data = {} 
+    for symbol in symbols:
+        params = {
+            'fsym': symbol,
+            'tsym': currency,
+            'limit': limit,
+            'aggregate': aggregate,
+            'toTs': to_timestamp,
+            'e': 'CCCAGG',  
+            'api_key': api_key
+        }
 
     try:
         response = requests.get(url, params=params)
         response.raise_for_status()  
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching historical data: {e}")
+        print(f"Error fetching historical data for: {symbol}: {e}")
         return None
 
     data = response.json().get('Data', {}).get('Data', [])
     if not data:
-        print("No data found. The time range might be too large or the API might not support it.")
+        print(f"No data found for symbol {symbol}. The time range might be too large or the API might not support it.")
         return None
 
     #save_to_json(data, f'historical_data_{symbol}_{currency}_{aggregate}min_{days_back}d.json')
@@ -44,9 +46,10 @@ def fetch_historical_data(api_key, symbol='ETH', currency='USD', aggregate=10, l
     print(data)
 
     df = pd.DataFrame(data)
-    df['time'] = pd.to_datetime(df['time'], unit='s')  # Convert timestamps to datetime
-    df.to_csv(f'crypto_data_{symbol}_{currency}1.csv', index=False)
+    df['time'] = pd.to_datetime(df['time'], unit='s')  
+    csv_filename = df.to_csv(f'crypto_data_{symbol}_{currency}_{days_back}.csv', index=False)
 
+    print(f"Data for {symbol} saved to {csv_filename}")
     return df
 
 def fetch_current_price(api_key, symbol='ETH', currency='USD'):
