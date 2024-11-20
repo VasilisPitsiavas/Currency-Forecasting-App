@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to the Machine Learning Prediction & Insights Hub</title>
+    <title>Welcome to the ML Prediction Hub</title>
     <!-- Include Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Include Font Awesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         body {
             background-color: #f8f9fa;
@@ -15,82 +17,125 @@
         .hero-section {
             background: linear-gradient(135deg, #007bff, #6610f2);
             color: white;
-            padding: 50px 20px;
+            padding: 60px 20px;
             text-align: center;
-            clip-path: polygon(0 0, 100% 0, 100% 80%, 0% 100%);
+            clip-path: polygon(0 0, 100% 0, 100% 75%, 0% 100%);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
         .hero-section h1 {
-            font-size: 2.5rem;
+            font-size: 3rem;
+            font-weight: bold;
             margin-bottom: 20px;
         }
         .hero-section p {
+            font-size: 1.25rem;
+            line-height: 1.8;
+        }
+        .btn-primary, .btn-secondary {
             font-size: 1.2rem;
-            line-height: 1.6;
+            padding: 12px 25px;
+            margin: 5px;
         }
         .features-section {
-            padding: 40px 20px;
+            padding: 60px 20px;
         }
         .feature {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         .feature-icon {
-            font-size: 4rem;
-            color: #007bff;
-            margin-bottom: 15px;
+            font-size: 3.5rem;
+            color: #6610f2;
+            margin-bottom: 20px;
         }
-        .btn-primary {
-            padding: 12px 25px;
-            font-size: 1.2rem;
+        .features-section h2 {
+            font-weight: bold;
+            margin-bottom: 40px;
+        }
+        .graphics-section img {
+            border-radius: 15px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        footer {
+            background-color: #f1f1f1;
+            padding: 20px 0;
+            margin-top: 40px;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
     <!-- Hero Section -->
     <section class="hero-section">
-        <h1>Welcome to the Machine Learning Prediction & Insights Hub</h1>
-        <p>Discover the power of machine learning for time series forecasting. Choose your model, visualize predictions, and explore valuable insights effortlessly!</p>
-        <a href="{{ url_for('predict') }}" class="btn btn-light mt-3">Get Started</a>
+        <h1>Welcome to the ML Prediction & Insights Hub</h1>
+        <p>Leverage the power of machine learning to explore time series forecasting, visualize trends, and gain actionable insights effortlessly.</p>
+        <!-- Model Choice Buttons -->
+        <div class="mt-4">
+            <h3>Select Your Prediction Model</h3>
+            <a href="{{ url_for('predict', model_choice='arimax') }}" class="btn btn-primary mt-3"><i class="fas fa-robot"></i> Use ARIMAX Model</a>
+            <a href="{{ url_for('predict', model_choice='xgboost') }}" class="btn btn-secondary mt-3"><i class="fas fa-chart-bar"></i> Use XGBoost Model</a>
+        </div>
     </section>
 
     <!-- Features Section -->
     <section class="features-section container">
-        <h2 class="text-center mb-4">What We Offer</h2>
+        <h2 class="text-center">What We Offer</h2>
         <div class="row">
             <div class="col-md-4 feature">
-                <i class="feature-icon fas fa-chart-line"></i>
+                <i class="feature-icon fas fa-chart-line"></i> <!-- Existing Font Awesome Icon -->
                 <h5>Multiple ML Models</h5>
-                <p>Select from various machine learning models like ARIMAX, Random Forest, and XGBoost to suit your needs.</p>
+                <p>Choose from advanced machine learning models like ARIMAX and XGBoost to suit your forecasting needs.</p>
             </div>
             <div class="col-md-4 feature">
-                <i class="feature-icon fas fa-cogs"></i>
+                <i class="feature-icon fas fa-cogs"></i> <!-- Existing Font Awesome Icon -->
                 <h5>Customizable Predictions</h5>
-                <p>Fine-tune prediction parameters and visualize data tailored to your requirements.</p>
+                <p>Fine-tune your parameters and visualize data to match your specific requirements seamlessly.</p>
             </div>
             <div class="col-md-4 feature">
-                <i class="feature-icon fas fa-database"></i>
+                <i class="feature-icon fas fa-database"></i> <!-- Existing Font Awesome Icon -->
                 <h5>Historical Insights</h5>
-                <p>Analyze past trends and leverage historical data to make accurate forecasts.</p>
+                <p>Analyze trends from historical data to make data-driven predictions and improve decision-making.</p>
             </div>
         </div>
     </section>
 
     <!-- Graphics Section -->
     <section class="container text-center my-5">
-        <img src="https://via.placeholder.com/800x400?text=Prediction+Visualizer+Graphic" 
-             alt="ARIMAX Prediction Visualizer Graphic" 
-             class="img-fluid rounded shadow">
-        <p class="mt-3">Use our intuitive platform to predict and visualize trends in your data.</p>
+        <h2 class="mb-4">What Our Users Say</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <p class="card-text">"This platform revolutionized how we analyze time series data. Highly recommend!"</p>
+                        <h6 class="card-subtitle text-muted mt-3">— Sarah J., Data Scientist</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <p class="card-text">"A game-changer for our financial forecasting needs."</p>
+                        <h6 class="card-subtitle text-muted mt-3">— Mark R., Financial Analyst</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <p class="card-text">"Simple, intuitive, and incredibly powerful. Love it!"</p>
+                        <h6 class="card-subtitle text-muted mt-3">— Emily K., Business Owner</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
 
     <!-- Footer -->
-    <footer class="text-center py-3 bg-light">
-        <p>&copy; 2024 ARIMAX Prediction Visualizer. All rights reserved.</p>
+    <footer class="text-center">
+        <p>&copy; 2024 Machine Learning Prediction Hub. All rights reserved.</p>
     </footer>
 
     <!-- Include Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Include Font Awesome for Icons -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
 </body>
 </html>
