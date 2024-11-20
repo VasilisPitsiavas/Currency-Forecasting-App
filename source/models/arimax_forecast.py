@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.arima.model import ARIMA
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, median_absolute_error
 from itertools import product
 import matplotlib.pyplot as plt
 import warnings
@@ -24,16 +24,13 @@ def split_data(target, exog, train_ratio=0.8):
 
     Ensures test_target and test_exog have the same length, using slicing.
     """
-    # Calculate split index
     split_idx = int(len(target) * train_ratio)
     
-    # Use iloc for slicing to ensure compatibility with pandas Series/DataFrame
     train_target = target.iloc[:split_idx]
     test_target = target.iloc[split_idx:]
     train_exog = exog.iloc[:split_idx]
     test_exog = exog.iloc[split_idx:]
     
-    # Adjust lengths if necessary
     if len(test_target) != len(test_exog):
         print(f"Warning: Test target length ({len(test_target)}) and test exog length ({len(test_exog)}) differ!")
         min_length = min(len(test_target), len(test_exog))
@@ -90,7 +87,6 @@ def plot_results(test_target, predictions):
     plt.show()
 
 def arimax_forecast(file_path):
-    """Main function to load data, preprocess, grid search, fit the ARIMAX model, and evaluate."""
     data = load_data(file_path)
     target, exog = preprocess_data(data)
     
@@ -104,13 +100,22 @@ def arimax_forecast(file_path):
     predictions = make_predictions(arimax_model, test_exog)
     
     error = evaluate_model(test_target, predictions)
+    mse = mean_squared_error(test_target, predictions)
+    mae = mean_absolute_error(test_target, predictions)
+    mdae = median_absolute_error(test_target, predictions)
     print(f'RMSE: {error}')
 
+    metrics = {
+        "RMSE": error,
+        "MSE": mse,
+        "MAE": mae,
+        "MdAE": mdae  
+    }
     #predictions_list = predictions.tolist()
 
-    print("Length of predictions:", len(predictions))
-    print("Length of actual values:", len(test_exog))
-    print("Length of timestamps:", len(test_exog))
+    #print("Length of predictions:", len(predictions))
+    #print("Length of actual values:", len(test_exog))
+    #print("Length of timestamps:", len(test_exog))
 
     
     
@@ -120,6 +125,6 @@ def arimax_forecast(file_path):
         'predicted': predictions
     })
    
-    result.to_csv('predictions_output.csv', index=False)
+    result.to_csv('arima_predictions.csv', index=False)
     
-    return result
+    return result, metrics
