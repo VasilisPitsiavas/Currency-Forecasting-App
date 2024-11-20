@@ -83,29 +83,42 @@ def fetch_data(api_key, symbol, currency, aggregate, limit, days_back):
 
 @app.route('/predict', methods=['GET'])
 def predict():
-    # Get the query parameters from the URL (with defaults if not provided)
-    model_choice = request.args.get('model_choice', 'arimax')  # Default to 'arimax'
-    symbol = request.args.get('symbol', 'ETH')  # Default to 'ETH'
-    currency = request.args.get('currency', 'USD')  # Default to 'USD'
+    # Get the query parameters from the URL
+    model_choice = request.args.get('model_choice', 'arimax')  
+    symbol = request.args.get('symbol', 'ETH')  
+    currency = request.args.get('currency', 'USD')  
 
     csv_file = f'crypto_data_{symbol}_{currency}.csv'
-
     if not os.path.exists(csv_file):
         return jsonify({'error': f'CSV file {csv_file} not found. Please fetch the data first.'}), 404
 
     print(f"Using {csv_file} for predictions with model: {model_choice}")
 
     if model_choice == 'arimax':
-        predictions = arimax_forecast(csv_file)  # Run ARIMA model with the saved CSV
-        print(predictions)
+        predictions, metrics = arimax_forecast(csv_file)
     elif model_choice == 'xgboost':
-        predictions = xgboost_forecast(csv_file)  # Run XGBoost model with the saved CSV
+        predictions, metrics = xgboost_forecast(csv_file)
     else:
         return jsonify({'error': 'Invalid model choice. Choose "arimax" or "xgboost".'}), 400
 
-    #plot_url = visualize_predictions(predictions)
+    if predictions.empty:
+        return jsonify({'error': 'The model returned no predictions. Check the data or model configuration.'}), 400
+
+    predictions['time'] = predictions['time'].dt.strftime('%Y-%m-%d %H:%M:%S') 
+
     predictions_list = predictions.to_dict(orient='records')
-    return render_template('predictions.html', model_choice=model_choice, predictions=predictions_list)
+
+    #For debug reasons
+    #prediction_data = [
+    #    {'time': '2024-11-15 12:20:00', 'actual': 3105.68, 'predicted': 3109.61},
+    #    {'time': '2024-11-15 12:30:00', 'actual': 3095.33, 'predicted': 3097.44},
+    #    {'time': '2024-11-15 12:40:00', 'actual': 3102.1, 'predicted': 3097.04}
+    #]
+
+    #print(predictions_list[:5])
+
+
+    return render_template('predictions.html', model_choice=model_choice, predictions=predictions_list, metrics=metrics)
 
 @app.route('/extract_value', methods=['GET'])
 def extract_current_value():
