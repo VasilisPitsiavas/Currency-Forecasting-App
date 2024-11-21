@@ -88,8 +88,54 @@ def evaluate_model(y_test, preds):
     """Evaluate the model's performance using RMSE."""
     return np.sqrt(mean_squared_error(y_test, preds))
 
+def train_live_model(file_path, target_column='close', train_ratio=0.8, save_model_path=None):
+    """
+    Train an XGBoost model using only the 'USD' feature and save it to the specified path.
+    """
+    data = load_data(file_path)
+    data.rename(columns={target_column: 'USD'}, inplace=True)
+    print(f"Renamed target column '{target_column}' to 'USD'.")
+    print(f"Columns in dataset: {data.columns}")
+    print(f"Loaded data shape: {data.shape}")
 
-def xgboost_forecast(file_path, target_column='close', train_ratio=0.8, save_model_path=None):
+    features, target = preprocess_data(data, target_column='USD', additional_features=['USD'])
+
+    X_train, X_test, y_train, y_test = split_data(features, target, train_ratio=train_ratio)
+
+    best_model = grid_search_xgboost(X_train, y_train)
+    predictions = make_predictions(best_model, X_test)
+
+    if save_model_path:
+        os.makedirs(os.path.dirname(save_model_path), exist_ok=True)
+        model_package = {
+            'model': best_model,
+            'features': ['USD'],  
+        }
+        joblib.dump(model_package, save_model_path)
+        print(f"Trained USD-only model saved to: {save_model_path}")
+
+    rmse = evaluate_model(y_test, predictions)
+    print(f"USD-only Model RMSE: {rmse}")
+
+    metrics = {
+        "RMSE": rmse,
+        "MSE": mean_squared_error(y_test, predictions),
+        "MAE": mean_absolute_error(y_test, predictions),
+        "MdAE": median_absolute_error(y_test, predictions),
+    }
+
+    result = pd.DataFrame({
+        'time': y_test.index,
+        'actual': y_test.values,
+        'predicted': predictions
+    })
+
+    result.to_csv('usd_only_model_predictions.csv', index=False)
+
+    return result, metrics
+
+
+def xgboost_forecast(file_path, target_column='close', train_ratio=0.8):
     """
     Forecast using XGBoost without creating lagged features.
     """
@@ -106,10 +152,12 @@ def xgboost_forecast(file_path, target_column='close', train_ratio=0.8, save_mod
     best_model = grid_search_xgboost(X_train, y_train)
     predictions = make_predictions(best_model, X_test)
 
+    ''' 
     if save_model_path:
         os.makedirs(os.path.dirname(save_model_path), exist_ok=True)
         joblib.dump(best_model, save_model_path)
         print(f"Trained model saved to: {save_model_path}")
+    '''
 
     rmse = evaluate_model(y_test, predictions)
     print(f"XGBoost RMSE: {rmse}")
@@ -136,24 +184,29 @@ def xgboost_forecast(file_path, target_column='close', train_ratio=0.8, save_mod
 
     return result, metrics
 
-def load_and_predict(model_path, feature_list_path, live_data):
+def predict_usd_realtime(model_path, live_data):
     """
-    Load a pre-trained XGBoost model and make predictions on live data.
+    Predict real-time cryptocurrency values using a USD-only pre-trained XGBoost model.
     """
-    model = joblib.load(model_path)
-    print(f"Loaded model from: {model_path}")
+    try:
+        model_package = joblib.load(model_path)
+        model = model_package['model']
+        required_features = model_package['features'] 
 
-    with open(feature_list_path, 'r') as f:
-        additional_features = json.load(f)
-    print(f"Loaded features: {additional_features}")
+        print(f"Loaded USD-only model from: {model_path}")
+        print(f"Required features for prediction: {required_features}")
 
-    live_df = pd.DataFrame([live_data])
+        live_df = pd.DataFrame([live_data])
+        if 'USD' not in live_df.columns:
+            raise KeyError("The live data does not contain the 'USD' feature.")
 
-    missing_features = [feature for feature in additional_features if feature not in live_df.columns]
-    if missing_features:
-        raise ValueError(f"Missing required features: {missing_features}")
+        features = live_df[['USD']] 
 
-    features = live_df[additional_features]
+        prediction = model.predict(features.values)
+        return float(prediction[0])
+    except KeyError as e:
+        raise ValueError(f"Missing required feature in live data: {e}")
+    except Exception as e:
+        raise ValueError(f"Error during real-time prediction: {e}")
 
-    prediction = model.predict(features.values)
-    return prediction[0]
+
