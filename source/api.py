@@ -106,6 +106,7 @@ def fetch_live_data(api_key, symbol='ETH', currency='USD', interval=10):
     while True:
         current_data = fetch_current_price(api_key, symbol, currency)
         if current_data:
+            current_data['time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             yield current_data
         time.sleep(interval)
         
