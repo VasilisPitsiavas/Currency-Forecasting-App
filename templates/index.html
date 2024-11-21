@@ -31,7 +31,7 @@
             font-size: 1.25rem;
             line-height: 1.8;
         }
-        .btn-primary, .btn-secondary {
+        .btn-primary, .btn-secondary, .btn-success {
             font-size: 1.2rem;
             padding: 12px 25px;
             margin: 5px;
@@ -71,9 +71,10 @@
         <p>Leverage the power of machine learning to explore time series forecasting, visualize trends, and gain actionable insights effortlessly.</p>
         <!-- Model Choice Buttons -->
         <div class="mt-4">
-            <h3>Select Your Prediction Model</h3>
+            <h3>Select Your Prediction Model or Explore Real-Time Data</h3>
             <a href="{{ url_for('predict', model_choice='arimax') }}" class="btn btn-primary mt-3"><i class="fas fa-robot"></i> Use ARIMAX Model</a>
             <a href="{{ url_for('predict', model_choice='xgboost') }}" class="btn btn-secondary mt-3"><i class="fas fa-chart-bar"></i> Use XGBoost Model</a>
+            <a href="{{ url_for('realtime') }}" class="btn btn-success mt-3"><i class="fas fa-clock"></i> Real-Time Monitoring</a>
         </div>
     </section>
 
@@ -82,17 +83,17 @@
         <h2 class="text-center">What We Offer</h2>
         <div class="row">
             <div class="col-md-4 feature">
-                <i class="feature-icon fas fa-chart-line"></i> <!-- Existing Font Awesome Icon -->
+                <i class="feature-icon fas fa-chart-line"></i>
                 <h5>Multiple ML Models</h5>
                 <p>Choose from advanced machine learning models like ARIMAX and XGBoost to suit your forecasting needs.</p>
             </div>
             <div class="col-md-4 feature">
-                <i class="feature-icon fas fa-cogs"></i> <!-- Existing Font Awesome Icon -->
+                <i class="feature-icon fas fa-cogs"></i>
                 <h5>Customizable Predictions</h5>
                 <p>Fine-tune your parameters and visualize data to match your specific requirements seamlessly.</p>
             </div>
             <div class="col-md-4 feature">
-                <i class="feature-icon fas fa-database"></i> <!-- Existing Font Awesome Icon -->
+                <i class="feature-icon fas fa-database"></i>
                 <h5>Historical Insights</h5>
                 <p>Analyze trends from historical data to make data-driven predictions and improve decision-making.</p>
             </div>
