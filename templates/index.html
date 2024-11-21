@@ -72,11 +72,13 @@
         <!-- Model Choice Buttons -->
         <div class="mt-4">
             <h3>Select Your Prediction Model or Explore Real-Time Data</h3>
-            <a href="{{ url_for('predict', model_choice='arimax') }}" class="btn btn-primary mt-3"><i class="fas fa-robot"></i> Use ARIMAX Model</a>
-            <a href="{{ url_for('predict', model_choice='xgboost') }}" class="btn btn-secondary mt-3"><i class="fas fa-chart-bar"></i> Use XGBoost Model</a>
-            <a href="{{ url_for('realtime') }}" class="btn btn-success mt-3"><i class="fas fa-clock"></i> Real-Time Monitoring</a>
+            <a href="{{ url_for('predict', model_choice='arimax') }}" class="btn btn-warning uniform-btn mt-3"><i class="fas fa-robot"></i> Use ARIMAX Model</a>
+            <a href="{{ url_for('predict', model_choice='xgboost') }}" class="btn btn-danger uniform-btn mt-3"><i class="fas fa-chart-bar"></i> Use XGBoost Model</a>
+            <a href="{{ url_for('realtime') }}" class="btn btn-light uniform-btn mt-3"><i class="fas fa-clock"></i> Real-Time Monitoring</a>
+            <a href="{{ url_for('fetch_data') }}" class="btn btn-info uniform-btn mt-3"> <i class="fas fa-database"></i> Fetch Data </a>
         </div>
     </section>
+    
 
     <!-- Features Section -->
     <section class="features-section container">
