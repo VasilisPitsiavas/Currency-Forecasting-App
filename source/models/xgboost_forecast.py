@@ -3,6 +3,9 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, median_abso
 from sklearn.model_selection import GridSearchCV
 import numpy as np
 import pandas as pd
+import joblib 
+import os
+import json
 
 
 def load_data(file_path):
@@ -86,7 +89,7 @@ def evaluate_model(y_test, preds):
     return np.sqrt(mean_squared_error(y_test, preds))
 
 
-def xgboost_forecast(file_path, target_column='close', train_ratio=0.8):
+def xgboost_forecast(file_path, target_column='close', train_ratio=0.8, save_model_path=None):
     """
     Forecast using XGBoost without creating lagged features.
     """
@@ -102,6 +105,11 @@ def xgboost_forecast(file_path, target_column='close', train_ratio=0.8):
 
     best_model = grid_search_xgboost(X_train, y_train)
     predictions = make_predictions(best_model, X_test)
+
+    if save_model_path:
+        os.makedirs(os.path.dirname(save_model_path), exist_ok=True)
+        joblib.dump(best_model, save_model_path)
+        print(f"Trained model saved to: {save_model_path}")
 
     rmse = evaluate_model(y_test, predictions)
     print(f"XGBoost RMSE: {rmse}")
@@ -127,3 +135,25 @@ def xgboost_forecast(file_path, target_column='close', train_ratio=0.8):
     result.to_csv('xgboost_predictions_no_lags.csv', index=False)
 
     return result, metrics
+
+def load_and_predict(model_path, feature_list_path, live_data):
+    """
+    Load a pre-trained XGBoost model and make predictions on live data.
+    """
+    model = joblib.load(model_path)
+    print(f"Loaded model from: {model_path}")
+
+    with open(feature_list_path, 'r') as f:
+        additional_features = json.load(f)
+    print(f"Loaded features: {additional_features}")
+
+    live_df = pd.DataFrame([live_data])
+
+    missing_features = [feature for feature in additional_features if feature not in live_df.columns]
+    if missing_features:
+        raise ValueError(f"Missing required features: {missing_features}")
+
+    features = live_df[additional_features]
+
+    prediction = model.predict(features.values)
+    return prediction[0]
