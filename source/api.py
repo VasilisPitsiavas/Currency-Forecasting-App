@@ -98,6 +98,7 @@ def save_to_json(data, filename):
     
     except Exception as e:
         print(f"Error occurred while saving data to {filename}: {e}")
+        
 
 def fetch_live_data(api_key, symbol='ETH', currency='USD', interval=10):
     """
