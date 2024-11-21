@@ -99,62 +99,49 @@
         const fetchForm = document.getElementById('fetchForm');
         const responseContainer = document.getElementById('responseContainer');
         const loadingSpinner = document.getElementById('loadingSpinner');
-
+    
         fetchForm.addEventListener('submit', async function (event) {
             event.preventDefault(); // Prevent default form submission
             responseContainer.innerHTML = ''; // Clear previous responses
+            responseContainer.classList.remove('alert-success', 'alert-danger');
             loadingSpinner.style.display = 'block'; // Show the spinner
-
+    
             const formData = new FormData(fetchForm);
             const params = new URLSearchParams();
-
+    
             // Append all form data to params
             formData.forEach((value, key) => {
                 params.append(key, value);
             });
-
-            // Fetch data using POST request
+    
             try {
                 const response = await fetch(`/fetch`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: params.toString(),
                 });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch data');
-                }
-
+    
                 const data = await response.json();
-
-                // Display data as a table
-                const tableHTML = `
-                    <table class="table table-striped mt-4">
-                        <thead>
-                            <tr>
-                                ${Object.keys(data[0]).map(key => `<th>${key}</th>`).join('')}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.map(row => `
-                                <tr>
-                                    ${Object.values(row).map(value => `<td>${value}</td>`).join('')}
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `;
-                responseContainer.innerHTML = tableHTML;
-                responseContainer.classList.remove('alert-danger');
-                responseContainer.classList.add('alert', 'alert-success');
+    
+                if (response.ok) {
+                    // Display success message
+                    responseContainer.innerHTML = `<p>${data.message || 'Data fetched successfully.'}</p>`;
+                    responseContainer.classList.add('alert', 'alert-success');
+                } else {
+                    // Display error message
+                    responseContainer.innerHTML = `<p>${data.error || 'Failed to fetch data.'}</p>`;
+                    responseContainer.classList.add('alert', 'alert-danger');
+                }
             } catch (error) {
-                responseContainer.innerHTML = `<p>${error.message}</p>`;
-                responseContainer.classList.remove('alert-success');
+                responseContainer.innerHTML = `<p>An unexpected error occurred: ${error.message}</p>`;
                 responseContainer.classList.add('alert', 'alert-danger');
             } finally {
                 loadingSpinner.style.display = 'none'; // Hide the spinner
             }
         });
     </script>
+    
+    <script src="{{ url_for('static', filename='static/js/Fetch_handler.js') }}"></script>
+
 </body>
 </html>
