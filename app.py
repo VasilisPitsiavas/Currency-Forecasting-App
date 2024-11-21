@@ -5,16 +5,25 @@ from datetime import datetime
 from source.api import fetch_historical_data
 from flask import Flask, render_template, request, jsonify, stream_with_context, Response
 from source.models.arimax_forecast import arimax_forecast
-from source.models.xgboost_forecast import xgboost_forecast, predict_usd_realtime, train_live_model
+from source.models.xgboost_forecast import xgboost_forecast, train_live_model, predict_usd_realtime
 from source.config import API_KEY
-from source.api import fetch_historical_data, fetch_live_data, preprocess_live_data
-from source.plotting import visualize_predictions
+from source.api import fetch_historical_data, fetch_live_data
 import os 
 import time
+import logging
 from joblib import load
 
-app = Flask(__name__)
 
+
+logging.basicConfig(
+    filename='app.log', 
+    level=logging.INFO,  
+    format='%(asctime)s - %(levelname)s - %(message)s'  
+)
+logging.info("Logging is configured. Application starting.")
+
+
+app = Flask(__name__)
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -23,27 +32,38 @@ def index():
 @app.route('/fetch', methods=['GET', 'POST'])
 def fetch_data():
     if request.method == 'POST':
-        api_key = API_KEY  
-        symbol = request.form.get('symbol', 'ETH')
-        currency = request.form.get('currency', 'USD')
-        aggregate = int(request.form.get('aggregate', 10))
-        limit = int(request.form.get('limit', 2000))
-        days_back = int(request.form.get('days_back', 30))
-
-        df = fetch_historical_data(api_key, symbol, currency, aggregate, limit, days_back)
-        print(f"Fetching data for {symbol} in {currency} with {aggregate}-minute aggregation, {days_back} days back.")
-
-        if df is None or df.empty:
-            return jsonify({"error": "No data available for the specified range."}), 400
-
         try:
-            data = df.to_dict(orient='records')
-            return render_template('display_data.html', data=data, symbol=symbol, currency=currency)
+            api_key = API_KEY
+            symbol = request.form.get('symbol', 'ETH')
+            currency = request.form.get('currency', 'USD')
+            aggregate = int(request.form.get('aggregate', 10))
+            limit = int(request.form.get('limit', 2000))
+            days_back = int(request.form.get('days_back', 30))
+
+            logging.info(f"Fetching data for {symbol} in {currency} with {aggregate}-minute aggregation, {days_back} days back.")
+
+            df = fetch_historical_data(api_key, symbol, currency, aggregate, limit, days_back)
+            if df is None or df.empty:
+                logging.warning(f"No data available for {symbol} in {currency}.")
+                return jsonify({"error": f"No data available for {symbol} in {currency}."}), 400
+
+            filename = f'data/crypto_data_{symbol}_{currency}_{days_back}d.csv'
+            df.to_csv(filename, index=False)
+            logging.info(f"Data for {symbol} saved to {filename}.")
+
+            data_preview = df.head(5).to_dict(orient='records')
+            return jsonify({
+                "message": f"Data for {symbol} in {currency} fetched and saved successfully.",
+                "data_preview": data_preview
+            })
         except Exception as e:
-            print(f"Error converting DataFrame to JSON: {e}")
-            return jsonify({"error": "Failed to process data."}), 500
+            logging.error(f"Unexpected error during fetch: {e}")
+            return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
 
     return render_template('fetch_form.html')
+
+
+
 
 @app.route('/predict', methods=['GET'])
 def predict():
