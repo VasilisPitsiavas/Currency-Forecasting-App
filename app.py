@@ -4,13 +4,15 @@ import pandas as pd
 #import matplotlib.pyplot as plt
 from datetime import datetime
 from source.api import fetch_historical_data
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, stream_with_context, Response
 from source.models.arimax_forecast import arimax_forecast
-from source.models.xgboost_forecast import xgboost_forecast
+from source.models.xgboost_forecast import xgboost_forecast, load_and_predict
 from source.config import API_KEY
-from source.api import fetch_historical_data
+from source.api import fetch_historical_data, fetch_live_data, preprocess_live_data
 from source.plotting import visualize_predictions
 import os 
+import time
+from joblib import load
 
 app = Flask(__name__)
 
@@ -18,33 +20,6 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
-''' 
-def main():
-    api_key = API_KEY
-    # User inputs for cryptocurrency, currency, and time period
-    symbol = input("Enter cryptocurrency symbol (e.g., 'ETH' for Ethereum): ") or 'ETH'
-    currency = input("Enter target currency (e.g., 'USD' for US Dollar): ") or 'USD'
-    aggregate = int(input("Enter aggregation level (e.g., 5 for 5-minute intervals): ") or 5)
-    limit = int(input("Enter the limit for number of data points (default is 2000): ") or 2000)
-    days_back = int(input("Enter the number of days to look back for historical data (default is 100): ") or 100)
-
-
-    # Fetch and process the data
-    print(f"Fetching historical data for {symbol} ({currency}) for the past {days_back} days with {aggregate}-minute aggregation.")
-    df = fetch_historical_data(api_key, symbol, currency, aggregate, limit, days_back)
-    
-    if df is not None:
-        print(f"Data fetched successfully for {symbol} in {currency}.")
-        save_to_csv(df, 'crypto_data1.csv')
-    else:
-        print(f"Failed to fetch data for {symbol} in {currency}.")
-    #csv_file = 'crypto_data.csv'
-    #model_choice = input("Choose the prediction model (arimax/xgboost): ").strip().lower()
-    #predictions = run_model(csv_file, model_choice)
-    
-    query_time = '2024-11-11 15:30:00'
-    #extract_current_value(df, query_time)
-'''
 
 @app.route('/fetch', methods=['GET', 'POST'])
 def fetch_data():
@@ -72,18 +47,8 @@ def fetch_data():
 
     return render_template('fetch_form.html')
 
-''' 
-def fetch_data(api_key, symbol, currency, aggregate, limit, days_back):
-    """
-    Fetches historical cryptocurrency data and saves it as a JSON file.
-    """
-    fetch_historical_data(api_key, symbol, currency, aggregate, limit, days_back)
-    print("Data fetched and saved as 'historical_data.json'")
-'''
-
 @app.route('/predict', methods=['GET'])
 def predict():
-    # Get the query parameters from the URL
     model_choice = request.args.get('model_choice', 'arimax')  
     symbol = request.args.get('symbol', 'ETH')  
     currency = request.args.get('currency', 'USD')  
@@ -97,7 +62,7 @@ def predict():
     if model_choice == 'arimax':
         predictions, metrics = arimax_forecast(csv_file)
     elif model_choice == 'xgboost':
-        predictions, metrics = xgboost_forecast(csv_file)
+        predictions, metrics = xgboost_forecast(csv_file, save_model_path='source/models/xgboost_model.pkl')
     else:
         return jsonify({'error': 'Invalid model choice. Choose "arimax" or "xgboost".'}), 400
 
@@ -119,6 +84,38 @@ def predict():
 
 
     return render_template('predictions.html', model_choice=model_choice, predictions=predictions_list, metrics=metrics)
+
+@app.route('/realtime', methods=['GET'])
+def realtime():
+    return render_template('realtime.html')
+
+@app.route('/stream_realtime', methods=['GET'])
+def stream_realtime():
+    api_key = API_KEY    
+    symbol = request.args.get('symbol', 'ETH')
+    currency = request.args.get('currency', 'USD')
+
+    def generate():
+        for live_data in fetch_live_data(api_key, symbol=symbol, currency=currency, interval=5):
+            try:
+                print(f"Live data received: {live_data}")
+
+                #live_df = preprocess_live_data(live_data, training_features)
+
+                #prediction = xgboost_model.predict(live_df.values)
+                #live_data['prediction'] = float(prediction[0])
+
+                yield f"data: {json.dumps(live_data)}\n\n"
+            except ValueError as e:
+                print(f"Preprocessing Error: {e}")
+                yield f"data: {json.dumps({'error': f'Preprocessing Error: {str(e)}'})}\n\n"
+            except Exception as e:
+                print(f"Unexpected Error: {e}")
+                yield f"data: {json.dumps({'error': 'Prediction failed due to an unexpected error'})}\n\n"
+            finally:
+                time.sleep(1)  
+
+    return Response(stream_with_context(generate()), content_type='text/event-stream')
 
 @app.route('/extract_value', methods=['GET'])
 def extract_current_value():
@@ -143,36 +140,3 @@ def extract_current_value():
 if __name__ == '__main__':
     app.run(debug=True)
 
-''' 
-
-def run_model(csv_file, model_choice):
-    """
-    Runs the chosen model and returns predictions.
-    """
-    if model_choice == 'arimax':
-        print("Running ARIMAX model...")
-        return arimax_forecast(csv_file)
-    
-    elif model_choice == 'xgboost':
-        print("Running XGBoost model...")
-        return xgboost_forecast(csv_file)
-    else:
-        print("Invalid choice. Please select either 'arimax' or 'xgboost'.")
-        return None
-
-def extract_current_value(df, query_time):
-    """
-    Filters the DataFrame for a specific time and prints the current value (close price) at that time.
-    """
-    df['time'] = pd.to_datetime(df['time'])
-    query_time = pd.to_datetime(query_time)
-    current_value = df[df['time'] == query_time]
-
-    if not current_value.empty:
-        print(f"Current value at {query_time}: {current_value['close'].values[0]}")
-    else:
-        print(f"No data found for the time {query_time}")
-
-if __name__ == '__main__':
-    main()
-'''
