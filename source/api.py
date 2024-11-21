@@ -1,4 +1,5 @@
 import requests
+import time
 import pandas as pd
 import json
 from datetime import datetime, timedelta, timezone
@@ -8,7 +9,6 @@ from source.data_processing import load_and_process_data
 def fetch_historical_data(api_key, symbols=['ETH', 'BTC', 'DOGE'], currency='USD', aggregate=10, limit=2000, days_back=30):
     """
     Fetches historical minute data of a cryptocurrency from the specified time range.
-    
     """
     to_timestamp = int(datetime.now(timezone.utc).timestamp())
     from_timestamp = int((datetime.now(timezone.utc) - timedelta(days=days_back)).timestamp())
@@ -55,7 +55,6 @@ def fetch_historical_data(api_key, symbols=['ETH', 'BTC', 'DOGE'], currency='USD
 def fetch_current_price(api_key, symbol='ETH', currency='USD'):
     """
     Fetches the current price of a cryptocurrency.
-    
     """
     url = 'https://min-api.cryptocompare.com/data/price'
     params = {
@@ -72,16 +71,13 @@ def fetch_current_price(api_key, symbol='ETH', currency='USD'):
         return None
 
     data = response.json()
-    df = load_and_process_data(data)
-    save_to_json(df, 'current_price.json')
-    
+    data['time'] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
     return data
 
 
 def save_to_json(data, filename):
     """
     Saves data to a JSON file.
-
     """
     try:
         print(f"Saving data to: {filename}")
@@ -102,3 +98,24 @@ def save_to_json(data, filename):
     
     except Exception as e:
         print(f"Error occurred while saving data to {filename}: {e}")
+
+def fetch_live_data(api_key, symbol='ETH', currency='USD', interval=10):
+    """
+    Fetches live cryptocurrency data periodically.
+    """
+    while True:
+        current_data = fetch_current_price(api_key, symbol, currency)
+        if current_data:
+            yield current_data
+        time.sleep(interval)
+        
+
+def preprocess_live_data(live_data, features):
+    """
+    Preprocess live data to match the input format of the pre-trained model.
+    """
+    live_df = pd.DataFrame([live_data])  
+    missing_features = [feature for feature in features if feature not in live_df.columns]
+    if missing_features:
+        raise ValueError(f"Missing required features: {missing_features}")
+    return live_df[features]
