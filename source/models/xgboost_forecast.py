@@ -100,32 +100,55 @@ def evaluate_model(y_test, preds):
     """Evaluate the model's performance using RMSE."""
     return np.sqrt(mean_squared_error(y_test, preds))
 
-def train_live_model(file_path, target_column='close', train_ratio=0.8, save_model_path=None, lags=1):
+def train_live_model(data_dir=None, file_path=None, symbol='USD', target_column='close', train_ratio=0.8, save_model_path=None, lags=1):
     """
-    Train an XGBoost model using lagged features for the 'USD' target column.
+    Train an XGBoost model using lagged features for the specified target column.
+    Can train using a single file or multiple files in a directory.
     """
-    data = load_data(file_path)
-    data.rename(columns={target_column: 'USD'}, inplace=True)
+    # Load data from a directory or a single file
+    if data_dir:
+        all_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.csv') and symbol in f]
+        combined_data = pd.DataFrame()
+        for file in all_files:
+            try:
+                df = load_data(file)
+                combined_data = pd.concat([combined_data, df], ignore_index=True)
+            except Exception as e:
+                print(f"Error reading file {file}: {e}")
+        if combined_data.empty:
+            raise ValueError(f"No data found in directory: {data_dir} for symbol: {symbol}")
+        data = combined_data
+    elif file_path:
+        data = load_data(file_path)
+    else:
+        raise ValueError("Either 'data_dir' or 'file_path' must be provided.")
 
+    # Prepare data
+    data.rename(columns={target_column: 'USD'}, inplace=True)
     data = create_lagged_features(data, target_column='USD', lags=lags)
 
+    # Define features and target
     features = data[[f'USD_lag_{i}' for i in range(1, lags + 1)]]
     target = data['USD']
 
+    # Split data
     X_train, X_test, y_train, y_test = split_data(features, target, train_ratio=train_ratio)
 
+    # Train model
     best_model = grid_search_xgboost(X_train, y_train)
 
+    # Save model and metadata
     if save_model_path:
         os.makedirs(os.path.dirname(save_model_path), exist_ok=True)
         model_package = {
             'model': best_model,
             'features': [f'USD_lag_{i}' for i in range(1, lags + 1)],
-            'lags': lags, 
+            'lags': lags,
         }
         joblib.dump(model_package, save_model_path)
         print(f"Trained model saved to: {save_model_path}")
 
+    # Make predictions and calculate metrics
     predictions = make_predictions(best_model, X_test)
     metrics = {
         "RMSE": evaluate_model(y_test, predictions),
@@ -135,7 +158,6 @@ def train_live_model(file_path, target_column='close', train_ratio=0.8, save_mod
     }
 
     return predictions, metrics
-
 
 def xgboost_forecast(file_path, target_column='close', train_ratio=0.8):
     """
@@ -186,30 +208,38 @@ def xgboost_forecast(file_path, target_column='close', train_ratio=0.8):
 
     return result, metrics
 
-def predict_usd_realtime(model_path, live_data):
+rolling_buffer = []
+
+def predict_usd_realtime(model_path, live_data, lags=2):
     """
-    Predict real-time cryptocurrency values using a USD-only pre-trained XGBoost model.
+    Predict real-time cryptocurrency values using a pre-trained model with lagged features.
     """
-    try:
-        model_package = joblib.load(model_path)
-        model = model_package['model']
-        required_features = model_package['features'] 
+    global rolling_buffer
 
-        print(f"Loaded USD-only model from: {model_path}")
-        print(f"Required features for prediction: {required_features}")
+    model_package = joblib.load(model_path)
+    model = model_package['model']
+    required_features = model_package['features']
 
-        live_df = pd.DataFrame([live_data])
-        if 'USD' not in live_df.columns:
-            raise KeyError("The live data does not contain the 'USD' feature.")
+    rolling_buffer.append(live_data['USD'])
+    
+    if len(rolling_buffer) > lags:
+        rolling_buffer = rolling_buffer[-lags:]
+    
+    if len(rolling_buffer) < lags:
+        print(f"Prediction Error: Waiting for enough data to generate lagged features. "
+              f"Current buffer size: {len(rolling_buffer)}, Required: {lags}")
+        return None
 
-        features = live_df[['USD']] 
+    lagged_features = {f'USD_lag_{i+1}': rolling_buffer[-(i+1)] for i in range(lags)}
+    lagged_df = pd.DataFrame([lagged_features])
 
-        prediction = model.predict(features.values)
-        return float(prediction[0])
-    except KeyError as e:
-        raise ValueError(f"Missing required feature in live data: {e}")
-    except Exception as e:
-        raise ValueError(f"Error during real-time prediction: {e}")
+    # Check if the features match the model's requirements
+    if set(lagged_df.columns) != set(required_features):
+        raise ValueError(f"Feature shape mismatch, expected: {len(required_features)}, got: {len(lagged_df.columns)}")
+
+    # Make the prediction
+    prediction = model.predict(lagged_df.values)
+    return float(prediction[0])
     
 def train_usd_model_future_steps(file_path, target_column='close', train_ratio=0.8, save_model_path=None, lags=1):
     """
@@ -292,11 +322,66 @@ def predict_usd_future_step(model_path, live_data, previous_values):
         raise ValueError(f"Missing required feature in live data: {e}")
     except Exception as e:
         raise ValueError(f"Prediction error: {e}")
+    
+def combine_data_from_directory(data_dir, target_column='close'):
+    """
+    Combine multiple CSV files from a directory into a single DataFrame.
+    
+    Args:
+        data_dir (str): Path to the directory containing the CSV files.
+        target_column (str): The target column to ensure exists in all files.
 
+    Returns:
+        pd.DataFrame: A combined DataFrame with data from all CSV files.
+    """
+    combined_data = []
+    
+    # Iterate through all files in the directory
+    for filename in os.listdir(data_dir):
+        if filename.endswith('.csv'):  # Check if the file is a CSV
+            file_path = os.path.join(data_dir, filename)
+            try:
+                # Read the CSV file
+                df = pd.read_csv(file_path)
+                # Check if the target column exists in the file
+                if target_column not in df.columns:
+                    print(f"Skipping {filename}: Missing target column '{target_column}'")
+                    continue
+                # Append the data to the list
+                combined_data.append(df)
+                print(f"Loaded data from {filename}")
+            except Exception as e:
+                print(f"Error reading {filename}: {e}")
+    
+    # Combine all data into a single DataFrame
+    if combined_data:
+        combined_df = pd.concat(combined_data, ignore_index=True)
+        # Sort by time column if it exists
+        if 'time' in combined_df.columns:
+            combined_df['time'] = pd.to_datetime(combined_df['time'], errors='coerce')
+            combined_df.sort_values(by='time', inplace=True)
+        print("Successfully combined data from all files.")
+        return combined_df
+    else:
+        print("No valid data files found in the directory.")
+        return pd.DataFrame()  # Return an empty DataFrame if no data was combined
 
+def train_model_from_directory(data_dir, target_column='close', save_model_path=None, lags=1):
+    """
+    Combine data from the directory, save it, and train the model.
+    """
+    # Combine data from the directory
+    combined_data = combine_data_from_directory(data_dir, target_column)
 
+    # Save combined data to a temporary CSV file
+    combined_file_path = os.path.join(data_dir, 'combined_data.csv')
+    combined_data.to_csv(combined_file_path, index=False)
+    print(f"Combined data saved to: {combined_file_path}")
 
-
-
-
-
+    # Call train_live_model with the combined file path
+    train_live_model(
+        file_path=combined_file_path, 
+        target_column=target_column,
+        save_model_path=save_model_path,
+        lags=lags
+    )
