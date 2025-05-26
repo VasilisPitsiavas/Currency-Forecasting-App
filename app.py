@@ -6,14 +6,15 @@ from source.api import fetch_historical_data
 from flask import Flask, render_template, request, jsonify, stream_with_context, Response
 from source.models.arimax_forecast import arimax_forecast
 from source.models.xgboost_forecast import xgboost_forecast, train_live_model, predict_usd_realtime
-from source.config import API_KEY
 from source.api import fetch_historical_data, fetch_live_data
 import os 
 import time
 import logging
 from joblib import load
+from dotenv import load_dotenv
+from flask_cors import CORS
 
-
+load_dotenv()
 
 logging.basicConfig(
     filename='app.log', 
@@ -24,6 +25,8 @@ logging.info("Logging is configured. Application starting.")
 
 
 app = Flask(__name__)
+CORS(app)
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -33,7 +36,6 @@ def index():
 def fetch_data():
     if request.method == 'POST':
         try:
-            api_key = API_KEY
             symbol = request.form.get('symbol', 'ETH')
             currency = request.form.get('currency', 'USD')
             aggregate = int(request.form.get('aggregate', 10))
@@ -42,7 +44,7 @@ def fetch_data():
 
             logging.info(f"Fetching data for {symbol} in {currency} with {aggregate}-minute aggregation, {days_back} days back.")
 
-            df = fetch_historical_data(api_key, symbol, currency, aggregate, limit, days_back)
+            df = fetch_historical_data(symbol, currency, aggregate, limit, days_back)
             if df is None or df.empty:
                 logging.warning(f"No data available for {symbol} in {currency}.")
                 return jsonify({"error": f"No data available for {symbol} in {currency}."}), 400
@@ -109,34 +111,26 @@ def realtime():
 
 @app.route('/stream_realtime', methods=['GET'])
 def stream_realtime():
-    api_key = API_KEY    
     symbol = request.args.get('symbol', 'ETH')
     currency = request.args.get('currency', 'USD')
-    model_path = 'models/usd_only_xgboost_model.pkl'
 
-    if not os.path.exists(model_path):
-        print(f"USD-only model not found at {model_path}. Training a new model...")
-        train_live_model(
-            file_path=f'crypto_data_{symbol}_{currency}.csv', 
-            target_column='close',
-            save_model_path=model_path
-        )
+    api_key = os.getenv('CRYPTOCOMPARE_API_KEY')
+    if not api_key:
+        raise RuntimeError("CRYPTOCOMPARE_API_KEY not set in environment")
 
     def generate():
-        for live_data in fetch_live_data(api_key, symbol=symbol, currency=currency, interval=5):
+        for live_data in fetch_live_data(api_key=api_key, symbol=symbol, currency=currency, interval=5):
             try:
                 print(f"Live data received: {live_data}")
-
-                prediction = predict_usd_realtime(model_path=model_path, live_data=live_data)
-                live_data['prediction'] = prediction
-
-                yield f"data: {json.dumps(live_data)}\n\n"
-            except ValueError as e:
-                print(f"Prediction Error: {e}")
-                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                # Only keep time and price
+                filtered_data = {
+                    'time': live_data.get('time'),
+                    currency: live_data.get(currency) or live_data.get('USD')
+                }
+                yield f"data: {json.dumps(filtered_data)}\n\n"
             except Exception as e:
                 print(f"Unexpected Error: {e}")
-                yield f"data: {json.dumps({'error': 'Unexpected error during prediction'})}\n\n"
+                yield f"data: {json.dumps({'error': 'Unexpected error during streaming'})}\n\n"
             finally:
                 time.sleep(1)
 
@@ -163,5 +157,5 @@ def extract_current_value():
         return jsonify({'error': f'An error occurred: {e}'}), 500
     
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5001)
 
