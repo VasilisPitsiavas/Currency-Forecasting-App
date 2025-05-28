@@ -102,7 +102,6 @@ def predict():
 
     #print(predictions_list[:5])
 
-
     return render_template('predictions.html', model_choice=model_choice, predictions=predictions_list, metrics=metrics)
 
 @app.route('/realtime', methods=['GET'])
@@ -156,6 +155,84 @@ def extract_current_value():
     except Exception as e:
         return jsonify({'error': f'An error occurred: {e}'}), 500
     
+
+@app.route('/api/predict/arimax', methods=['POST'])
+def predict_arimax():
+    data = request.get_json()
+    symbol = data.get('symbol', 'ETH')
+    currency = data.get('currency', 'USD')
+    steps = int(data.get('steps', 10))
+    file_path = f'data/crypto_data_{symbol}_{currency}_30d.csv'
+
+    if not os.path.exists(file_path):
+        return jsonify({'error': f'Data file {file_path} not found.'}), 404
+
+    df = pd.read_csv(file_path)
+    df = add_features(df)
+    df = df.dropna()
+    df.to_csv('debug_arimax_features.csv', index=False)  # For debugging
+
+    # Use the improved arimax_forecast (assume it uses all features)
+    result, metrics = arimax_forecast(file_path)
+    # For now, intervals are not implemented
+    predictions = result[['time', 'predicted']].tail(steps).to_dict(orient='records')
+    return jsonify({
+        'predictions': predictions,
+        'intervals': [],
+        'metrics': metrics
+    })
+
+@app.route('/api/predict/xgboost', methods=['POST'])
+def predict_xgboost():
+    data = request.get_json()
+    symbol = data.get('symbol', 'ETH')
+    currency = data.get('currency', 'USD')
+    steps = int(data.get('steps', 10))
+    file_path = f'data/crypto_data_{symbol}_{currency}_30d.csv'
+
+    if not os.path.exists(file_path):
+        return jsonify({'error': f'Data file {file_path} not found.'}), 404
+
+    df = pd.read_csv(file_path)
+    df = add_features(df)
+    df = df.dropna()
+    df.to_csv('debug_xgboost_features.csv', index=False)  # For debugging
+
+    # Use the improved xgboost_forecast (assume it uses all features)
+    result, metrics = xgboost_forecast(file_path)
+    predictions = result[['time', 'predicted']].tail(steps).to_dict(orient='records')
+    return jsonify({
+        'predictions': predictions,
+        'intervals': [],
+        'metrics': metrics
+    })
+
+def add_features(df):
+    df['close_lag1'] = df['close'].shift(1)
+    df['close_lag2'] = df['close'].shift(2)
+    df['rolling_mean_5'] = df['close'].rolling(window=5).mean()
+    df['rolling_std_5'] = df['close'].rolling(window=5).std()
+    # Add more indicators as needed
+    return df
+
+@app.route('/api/history', methods=['GET'])
+def get_history():
+    symbol = request.args.get('symbol', 'ETH')
+    currency = request.args.get('currency', 'USD')
+    limit = int(request.args.get('limit', 30))
+    file_path = f'data/crypto_data_{symbol}_{currency}_30d.csv'
+
+    if not os.path.exists(file_path):
+        return jsonify({'error': f'Data file {file_path} not found.'}), 404
+
+    df = pd.read_csv(file_path)
+    df = df.dropna(subset=['time', 'close'])
+    # Get the last `limit` rows
+    recent = df.tail(limit)
+    # Return time and actual close price
+    history = recent[['time', 'close']].rename(columns={'close': 'actual'}).to_dict(orient='records')
+    return jsonify({'history': history})
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
 
