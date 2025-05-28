@@ -102,7 +102,6 @@ def predict():
 
     #print(predictions_list[:5])
 
-
     return render_template('predictions.html', model_choice=model_choice, predictions=predictions_list, metrics=metrics)
 
 @app.route('/realtime', methods=['GET'])
