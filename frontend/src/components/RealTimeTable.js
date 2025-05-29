@@ -13,11 +13,14 @@ import {
   CircularProgress,
   Grid,
   Card,
-  CardContent,
-  Badge
+  CardContent
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import CurrencyBitcoinIcon from '@mui/icons-material/CurrencyBitcoin';
+import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001';
 
@@ -30,6 +33,18 @@ const columns = [
   { id: 'price', label: 'Price (USD)', minWidth: 100 },
   { id: 'change', label: 'Change', minWidth: 100 },
 ];
+
+// Color and icon map for each crypto
+const cryptoStyles = {
+  BTC: { color: '#f7931a', icon: <CurrencyBitcoinIcon fontSize="large" /> },
+  ETH: { color: '#627eea', icon: <MonetizationOnIcon fontSize="large" /> },
+  SOL: { color: '#00ffa3', icon: <ShowChartIcon fontSize="large" /> },
+  ADA: { color: '#0033ad', icon: <MonetizationOnIcon fontSize="large" /> },
+  DOT: { color: '#e6007a', icon: <CurrencyExchangeIcon fontSize="large" /> },
+  AVAX: { color: '#e84142', icon: <MonetizationOnIcon fontSize="large" /> },
+  MATIC: { color: '#8247e5', icon: <ShowChartIcon fontSize="large" /> },
+  LINK: { color: '#2a5ada', icon: <CurrencyExchangeIcon fontSize="large" /> },
+};
 
 export default function RealTimeTable() {
   const [liveData, setLiveData] = useState({});
@@ -131,7 +146,7 @@ export default function RealTimeTable() {
     if (change === null) return 'N/A';
     const isPositive = parseFloat(change) > 0;
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', color: isPositive ? 'success.main' : 'error.main' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', color: isPositive ? 'success.main' : 'error.main', fontWeight: 600 }}>
         {isPositive ? <TrendingUpIcon /> : <TrendingDownIcon />}
         <Typography variant="body2" sx={{ ml: 1 }}>
           {change}%
@@ -144,19 +159,29 @@ export default function RealTimeTable() {
     <Grid container spacing={2} sx={{ mb: 4 }}>
       {CRYPTOCURRENCIES.map(symbol => {
         const data = summaryData[symbol] || { price: 0, change: null };
+        const style = cryptoStyles[symbol] || { color: '#1976d2', icon: <MonetizationOnIcon fontSize="large" /> };
         return (
           <Grid item xs={12} sm={6} md={3} key={symbol}>
-            <Card sx={{ 
-              minWidth: 150, 
+            <Card sx={{
+              minWidth: 150,
               textAlign: 'center',
-              boxShadow: 2,
-              '&:hover': { boxShadow: 4 }
+              boxShadow: 6,
+              borderRadius: 3,
+              background: `linear-gradient(135deg, ${style.color} 60%, #fff 100%)`,
+              color: '#fff',
+              position: 'relative',
+              overflow: 'hidden',
+              '&:hover': { boxShadow: 12, transform: 'scale(1.03)' },
+              transition: 'all 0.2s',
             }}>
               <CardContent>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 1 }}>
+                  {style.icon}
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, color: '#fff' }}>
                   {symbol}
                 </Typography>
-                <Typography variant="h5" sx={{ mb: 1 }}>
+                <Typography variant="h5" sx={{ mb: 1, color: '#fff' }}>
                   ${data.price ? data.price.toFixed(2) : '0.00'}
                 </Typography>
                 {renderPriceChange(data.change)}
@@ -174,12 +199,12 @@ export default function RealTimeTable() {
     ).slice(0, 40);
 
     return (
-      <TableContainer component={Paper} sx={{ maxWidth: 1200, mx: 'auto', mt: 2 }}>
+      <TableContainer component={Paper} sx={{ maxWidth: 1200, mx: 'auto', mt: 2, borderRadius: 3, boxShadow: 4, overflow: 'hidden' }}>
         <Table stickyHeader>
           <TableHead>
-            <TableRow>
+            <TableRow sx={{ background: '#f4f6fa' }}>
               {columns.map((col) => (
-                <TableCell key={col.id} style={{ minWidth: col.minWidth, fontWeight: 'bold' }}>
+                <TableCell key={col.id} style={{ minWidth: col.minWidth, fontWeight: 'bold', background: '#e3f2fd', color: '#1976d2' }}>
                   {col.label}
                 </TableCell>
               ))}
@@ -194,11 +219,25 @@ export default function RealTimeTable() {
               </TableRow>
             ) : (
               allData.map((row, idx) => (
-                <TableRow key={row.time + row.symbol + idx}>
+                <TableRow
+                  key={row.time + row.symbol + idx}
+                  sx={{
+                    backgroundColor: idx % 2 === 0 ? '#f9fbfd' : '#e3f2fd',
+                    '&:hover': { backgroundColor: '#bbdefb' },
+                  }}
+                >
                   <TableCell>{row.time}</TableCell>
-                  <TableCell>{row.symbol}</TableCell>
-                  <TableCell>${row.price !== undefined ? row.price.toFixed(2) : 'N/A'}</TableCell>
-                  <TableCell>{renderPriceChange(row.change)}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {cryptoStyles[row.symbol]?.icon || <MonetizationOnIcon fontSize="small" />} {row.symbol}
+                    </Box>
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#1976d2' }}>${row.price !== undefined ? row.price.toFixed(2) : 'N/A'}</TableCell>
+                  <TableCell>
+                    <Box sx={{ fontWeight: 600, color: parseFloat(row.change) > 0 ? 'success.main' : 'error.main' }}>
+                      {renderPriceChange(row.change)}
+                    </Box>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -209,8 +248,8 @@ export default function RealTimeTable() {
   };
 
   return (
-    <Box sx={{ mt: 4, px: 2 }}>
-      <Typography variant="h4" align="center" color="primary" gutterBottom>
+    <Box sx={{ mt: 4, px: 2, background: 'linear-gradient(135deg, #e3f2fd 0%, #f4f6fa 100%)', minHeight: '100vh', pb: 6 }}>
+      <Typography variant="h4" align="center" color="primary" gutterBottom sx={{ fontWeight: 700 }}>
         Real-Time Cryptocurrency Monitoring
       </Typography>
       {error && (
