@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Button, Select, MenuItem, TextField, Box, Typography, Paper, Card, CardContent, CircularProgress, AppBar, Toolbar, Alert } from '@mui/material';
+import { Button, Select, MenuItem, TextField, Box, Typography, Paper, Card, CardContent, CircularProgress, Alert, Container } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import Container from '@mui/material/Container';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001';
 
@@ -95,27 +94,18 @@ export default function PredictionDashboard() {
   }));
 
   return (
-    <Box sx={{ background: '#f4f6fa', minHeight: '100vh' }}>
-      <AppBar position="static" color="primary" sx={{ mb: 4 }}>
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700, letterSpacing: 1 }}>
-            Currency Forecasting Dashboard
-          </Typography>
-        </Toolbar>
-      </AppBar>
+    <Box sx={{ background: 'linear-gradient(135deg, #e3f2fd 0%, #f4f6fa 100%)', minHeight: '100vh', py: 6 }}>
       <Container maxWidth="md">
-        <Paper elevation={3} sx={{ p: 4, borderRadius: 3, mb: 4 }}>
-          <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+        <Paper elevation={4} sx={{ p: 4, borderRadius: 4, mb: 4, boxShadow: 6 }}>
+          <Typography variant="h4" align="center" sx={{ fontWeight: 700, mb: 3, color: 'primary.main' }}>
             Crypto Price Prediction
           </Typography>
-          
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
-
-          <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
             <Select 
               value={model} 
               onChange={e => setModel(e.target.value)} 
@@ -159,7 +149,7 @@ export default function PredictionDashboard() {
           </Box>
 
           {metrics && (
-            <Card sx={{ mb: 3, background: '#e3f2fd', display: 'inline-block', px: 3, py: 2 }}>
+            <Card sx={{ mb: 3, background: '#e3f2fd', display: 'inline-block', px: 3, py: 2, borderRadius: 2, boxShadow: 2 }}>
               <CardContent sx={{ p: 0 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Prediction Metrics</Typography>
                 <Typography variant="body2">RMSE: <b>{metrics.RMSE && metrics.RMSE.toFixed(3)}</b></Typography>
