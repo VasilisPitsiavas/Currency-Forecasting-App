@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
-import { TrendingUp, Timeline, Settings, Home as HomeIcon } from '@mui/icons-material';
+import { TrendingUp, Timeline, Settings, Home as HomeIcon, Login as LoginIcon, PersonAdd as PersonAddIcon } from '@mui/icons-material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 
 // Free SVG icon (currency/finance theme)
@@ -56,6 +56,24 @@ function Navbar() {
               {link.label}
             </Button>
           ))}
+          <Button
+            color="inherit"
+            startIcon={<LoginIcon />}
+            component={RouterLink}
+            to="/login"
+            sx={{ fontWeight: 600 }}
+          >
+            Log In
+          </Button>
+          <Button
+            color="inherit"
+            startIcon={<PersonAddIcon />}
+            component={RouterLink}
+            to="/signup"
+            sx={{ fontWeight: 600 }}
+          >
+            Sign Up
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>

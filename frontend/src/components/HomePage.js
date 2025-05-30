@@ -15,7 +15,7 @@ export default function HomePage() {
         <Typography variant="h5" sx={{ mb: 4, color: 'text.secondary', fontWeight: 400 }}>
           Real-time monitoring and future price predictions for your favorite cryptocurrencies, powered by advanced machine learning models.
         </Typography>
-        <Grid container spacing={2} justifyContent="center" sx={{ mb: 4 }}>
+        <Grid container spacing={2} justifyContent="center" sx={{ mb: 2 }}>
           <Grid item>
             <Button
               variant="contained"
