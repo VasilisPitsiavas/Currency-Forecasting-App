@@ -13,6 +13,9 @@ import logging
 from joblib import load
 from dotenv import load_dotenv
 from flask_cors import CORS
+from flask import request, jsonify
+from flask_jwt_extended import JWTManager, create_access_token
+from models import db, User
 
 load_dotenv()
 
@@ -25,11 +28,15 @@ logging.info("Logging is configured. Application starting.")
 
 
 app = Flask(__name__)
-CORS(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Change this in production!
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+CORS(app)
+db.init_app(app)
+jwt = JWTManager(app)
+
+with app.app_context():
+    db.create_all()
 
 
 @app.route('/fetch', methods=['GET', 'POST'])
@@ -232,6 +239,32 @@ def get_history():
     # Return time and actual close price
     history = recent[['time', 'close']].rename(columns={'close': 'actual'}).to_dict(orient='records')
     return jsonify({'history': history})
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    if not username or not password:
+        return jsonify({'error': 'Username and password required'}), 400
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username already exists'}), 400
+    user = User(username=username)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    return jsonify({'message': 'User registered successfully'})
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    user = User.query.filter_by(username=username).first()
+    if user and user.check_password(password):
+        access_token = create_access_token(identity=user.id)
+        return jsonify({'access_token': access_token})
+    return jsonify({'error': 'Invalid credentials'}), 401
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
