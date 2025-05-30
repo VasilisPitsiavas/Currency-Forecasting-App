@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
-import { TrendingUp, Timeline, Settings, Home as HomeIcon, Login as LoginIcon, PersonAdd as PersonAddIcon } from '@mui/icons-material';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { TrendingUp, Timeline, Settings, Home as HomeIcon, Login as LoginIcon, PersonAdd as PersonAddIcon, Logout as LogoutIcon } from '@mui/icons-material';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
 // Free SVG icon (currency/finance theme)
 const LogoIcon = () => (
@@ -14,11 +14,26 @@ const LogoIcon = () => (
 
 function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const isAuthenticated = !!localStorage.getItem('token');
+
+  useEffect(() => {
+    console.log('Navbar - Authentication status:', isAuthenticated);
+  }, [isAuthenticated]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    console.log('Navbar - Logged out, token removed');
+    navigate('/login');
+  };
+
   const navLinks = [
     { label: 'Home', to: '/', icon: <HomeIcon /> },
-    { label: 'Predictions', to: '/predict', icon: <TrendingUp /> },
-    { label: 'Real-Time', to: '/realtime', icon: <Timeline /> },
-    { label: 'Settings', to: '/settings', icon: <Settings /> },
+    ...(isAuthenticated ? [
+      { label: 'Predictions', to: '/predict', icon: <TrendingUp /> },
+      { label: 'Real-Time', to: '/realtime', icon: <Timeline /> },
+      { label: 'Settings', to: '/settings', icon: <Settings /> },
+    ] : []),
   ];
 
   return (
@@ -56,24 +71,37 @@ function Navbar() {
               {link.label}
             </Button>
           ))}
-          <Button
-            color="inherit"
-            startIcon={<LoginIcon />}
-            component={RouterLink}
-            to="/login"
-            sx={{ fontWeight: 600 }}
-          >
-            Log In
-          </Button>
-          <Button
-            color="inherit"
-            startIcon={<PersonAddIcon />}
-            component={RouterLink}
-            to="/signup"
-            sx={{ fontWeight: 600 }}
-          >
-            Sign Up
-          </Button>
+          {!isAuthenticated ? (
+            <>
+              <Button
+                color="inherit"
+                startIcon={<LoginIcon />}
+                component={RouterLink}
+                to="/login"
+                sx={{ fontWeight: 600 }}
+              >
+                Log In
+              </Button>
+              <Button
+                color="inherit"
+                startIcon={<PersonAddIcon />}
+                component={RouterLink}
+                to="/signup"
+                sx={{ fontWeight: 600 }}
+              >
+                Sign Up
+              </Button>
+            </>
+          ) : (
+            <Button
+              color="inherit"
+              startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+              sx={{ fontWeight: 600 }}
+            >
+              Logout
+            </Button>
+          )}
         </Box>
       </Toolbar>
     </AppBar>
