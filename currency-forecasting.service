@@ -1,0 +1,14 @@
+[Unit]
+Description=Currency Forecasting Application
+After=network.target
+
+[Service]
+User=vasilispitsiavas
+WorkingDirectory=/Users/vasilispitsiavas/Documents/projects25/currency-forecasting-app/currency-forecasting-app
+Environment="PATH=/Users/vasilispitsiavas/Documents/projects25/currency-forecasting-app/venv/bin"
+ExecStart=/Users/vasilispitsiavas/Documents/projects25/currency-forecasting-app/venv/bin/python3 app.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target 

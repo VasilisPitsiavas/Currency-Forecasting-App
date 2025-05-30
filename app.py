@@ -16,6 +16,10 @@ from flask_cors import CORS
 from flask import request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token
 from models import db, User
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+import jwt
+import datetime
 
 load_dotenv()
 
@@ -31,7 +35,17 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Change this in production!
 
-CORS(app)
+# Enable CORS for all routes with proper headers for SSE
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "expose_headers": ["Content-Type"],
+        "supports_credentials": True
+    }
+})
+
 db.init_app(app)
 jwt = JWTManager(app)
 
@@ -140,7 +154,10 @@ def stream_realtime():
             finally:
                 time.sleep(1)
 
-    return Response(stream_with_context(generate()), content_type='text/event-stream')
+    response = Response(stream_with_context(generate()), content_type='text/event-stream')
+    response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
 
 @app.route('/extract_value', methods=['GET'])
 def extract_current_value():
@@ -265,6 +282,15 @@ def login():
         access_token = create_access_token(identity=user.id)
         return jsonify({'access_token': access_token})
     return jsonify({'error': 'Invalid credentials'}), 401
+
+@app.route('/api/admin/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    return jsonify([{
+        'id': user.id,
+        'username': user.username,
+        'created_at': user.created_at.isoformat() if user.created_at else None
+    } for user in users])
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
