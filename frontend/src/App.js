@@ -1,21 +1,36 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import PredictionDashboard from './components/PredictionDashboard';
 import HomePage from './components/HomePage';
 import RealTimeTable from './components/RealTimeTable';
-// import RealTimeTable from './components/RealTimeTable'; // Uncomment if you have this component
+import Navbar from './components/Navbar';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#dc004e',
+    },
+  },
+});
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        {/* Uncomment the next line if you have a RealTimeTable component */}
-        {/* <Route path="/realtime" element={<RealTimeTable symbol="ETH" currency="USD" />} /> */}
-        <Route path="/predict" element={<PredictionDashboard />} />
-        <Route path="/realtime" element={<RealTimeTable symbol="ETH" currency="USD" />} />
-      </Routes>
-    </Router>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/predict" element={<PredictionDashboard />} />
+          <Route path="/realtime" element={<RealTimeTable />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 

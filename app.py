@@ -3,7 +3,7 @@ import json
 import pandas as pd
 from datetime import datetime
 from source.api import fetch_historical_data
-from flask import Flask, render_template, request, jsonify, stream_with_context, Response
+from flask import Flask, render_template, request, jsonify, stream_with_context, Response, redirect
 from source.models.arimax_forecast import arimax_forecast
 from source.models.xgboost_forecast import xgboost_forecast, train_live_model, predict_usd_realtime
 from source.api import fetch_historical_data, fetch_live_data
@@ -106,7 +106,8 @@ def predict():
 
 @app.route('/realtime', methods=['GET'])
 def realtime():
-    return render_template('realtime.html')
+    # Redirect to React frontend realtime page
+    return redirect('http://localhost:3000/realtime')
 
 @app.route('/stream_realtime', methods=['GET'])
 def stream_realtime():
