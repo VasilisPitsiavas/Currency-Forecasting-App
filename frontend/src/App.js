@@ -6,6 +6,8 @@ import PredictionDashboard from './components/PredictionDashboard';
 import HomePage from './components/HomePage';
 import RealTimeTable from './components/RealTimeTable';
 import Navbar from './components/Navbar';
+import ErrorBoundary from './components/ErrorBoundary';
+import { AppProvider } from './context/AppContext';
 
 const theme = createTheme({
   palette: {
@@ -20,17 +22,21 @@ const theme = createTheme({
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/predict" element={<PredictionDashboard />} />
-          <Route path="/realtime" element={<RealTimeTable />} />
-        </Routes>
-      </Router>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Router>
+            <Navbar />
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/predict" element={<PredictionDashboard />} />
+              <Route path="/realtime" element={<RealTimeTable />} />
+            </Routes>
+          </Router>
+        </ThemeProvider>
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -14,6 +14,12 @@ from joblib import load
 from dotenv import load_dotenv
 from flask_cors import CORS
 
+# Import new services and schemas
+from source.api_schemas import PredictionRequest, HistoryRequest, create_success_response, create_error_response, API_DOCS
+from source.services.prediction_service import PredictionService
+from source.services.history_service import HistoryService
+from source.services.advanced_prediction_service import AdvancedPredictionService
+
 load_dotenv()
 
 logging.basicConfig(
@@ -109,6 +115,11 @@ def realtime():
     # Redirect to React frontend realtime page
     return redirect('http://localhost:3000/realtime')
 
+@app.route('/advanced', methods=['GET'])
+def advanced_predictions():
+    """Advanced prediction system UI"""
+    return render_template('advanced_predictions.html')
+
 @app.route('/stream_realtime', methods=['GET'])
 def stream_realtime():
     symbol = request.args.get('symbol', 'ETH')
@@ -159,54 +170,61 @@ def extract_current_value():
 
 @app.route('/api/predict/arimax', methods=['POST'])
 def predict_arimax():
-    data = request.get_json()
-    symbol = data.get('symbol', 'ETH')
-    currency = data.get('currency', 'USD')
-    steps = int(data.get('steps', 10))
-    file_path = f'data/crypto_data_{symbol}_{currency}_30d.csv'
-
-    if not os.path.exists(file_path):
-        return jsonify({'error': f'Data file {file_path} not found.'}), 404
-
-    df = pd.read_csv(file_path)
-    df = add_features(df)
-    df = df.dropna()
-    df.to_csv('debug_arimax_features.csv', index=False)  # For debugging
-
-    # Use the improved arimax_forecast (assume it uses all features)
-    result, metrics = arimax_forecast(file_path)
-    # For now, intervals are not implemented
-    predictions = result[['time', 'predicted']].tail(steps).to_dict(orient='records')
-    return jsonify({
-        'predictions': predictions,
-        'intervals': [],
-        'metrics': metrics
-    })
+    """Get ARIMAX model predictions"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify(create_error_response("No data provided")), 400
+        
+        # Create prediction request
+        request_obj = PredictionRequest(
+            symbol=data.get('symbol', 'ETH'),
+            currency=data.get('currency', 'USD'),
+            steps=int(data.get('steps', 10)),
+            model='arimax'
+        )
+        
+        # Get prediction using service
+        prediction_service = PredictionService()
+        response = prediction_service.get_prediction(request_obj)
+        
+        if response.success:
+            return jsonify(response.to_dict()), 200
+        else:
+            return jsonify(response.to_dict()), 400
+            
+    except Exception as e:
+        logging.error(f"Error in predict_arimax: {e}")
+        return jsonify(create_error_response(f"Internal server error: {str(e)}")), 500
 
 @app.route('/api/predict/xgboost', methods=['POST'])
 def predict_xgboost():
-    data = request.get_json()
-    symbol = data.get('symbol', 'ETH')
-    currency = data.get('currency', 'USD')
-    steps = int(data.get('steps', 10))
-    file_path = f'data/crypto_data_{symbol}_{currency}_30d.csv'
-
-    if not os.path.exists(file_path):
-        return jsonify({'error': f'Data file {file_path} not found.'}), 404
-
-    df = pd.read_csv(file_path)
-    df = add_features(df)
-    df = df.dropna()
-    df.to_csv('debug_xgboost_features.csv', index=False)  # For debugging
-
-    # Use the improved xgboost_forecast (assume it uses all features)
-    result, metrics = xgboost_forecast(file_path)
-    predictions = result[['time', 'predicted']].tail(steps).to_dict(orient='records')
-    return jsonify({
-        'predictions': predictions,
-        'intervals': [],
-        'metrics': metrics
-    })
+    """Get XGBoost model predictions"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify(create_error_response("No data provided")), 400
+        
+        # Create prediction request
+        request_obj = PredictionRequest(
+            symbol=data.get('symbol', 'ETH'),
+            currency=data.get('currency', 'USD'),
+            steps=int(data.get('steps', 10)),
+            model='xgboost'
+        )
+        
+        # Get prediction using service
+        prediction_service = PredictionService()
+        response = prediction_service.get_prediction(request_obj)
+        
+        if response.success:
+            return jsonify(response.to_dict()), 200
+        else:
+            return jsonify(response.to_dict()), 400
+            
+    except Exception as e:
+        logging.error(f"Error in predict_xgboost: {e}")
+        return jsonify(create_error_response(f"Internal server error: {str(e)}")), 500
 
 def add_features(df):
     df['close_lag1'] = df['close'].shift(1)
@@ -218,21 +236,127 @@ def add_features(df):
 
 @app.route('/api/history', methods=['GET'])
 def get_history():
-    symbol = request.args.get('symbol', 'ETH')
-    currency = request.args.get('currency', 'USD')
-    limit = int(request.args.get('limit', 30))
-    file_path = f'data/crypto_data_{symbol}_{currency}_30d.csv'
+    """Get historical cryptocurrency data"""
+    try:
+        # Create history request
+        request_obj = HistoryRequest(
+            symbol=request.args.get('symbol', 'ETH'),
+            currency=request.args.get('currency', 'USD'),
+            limit=int(request.args.get('limit', 30))
+        )
+        
+        # Get history using service
+        history_service = HistoryService()
+        response = history_service.get_history(request_obj)
+        
+        if response.success:
+            return jsonify(response.to_dict()), 200
+        else:
+            return jsonify(response.to_dict()), 400
+            
+    except Exception as e:
+        logging.error(f"Error in get_history: {e}")
+        return jsonify(create_error_response(f"Internal server error: {str(e)}")), 500
 
-    if not os.path.exists(file_path):
-        return jsonify({'error': f'Data file {file_path} not found.'}), 404
+@app.route('/api/docs', methods=['GET'])
+def api_documentation():
+    """Get API documentation"""
+    return jsonify(API_DOCS)
 
-    df = pd.read_csv(file_path)
-    df = df.dropna(subset=['time', 'close'])
-    # Get the last `limit` rows
-    recent = df.tail(limit)
-    # Return time and actual close price
-    history = recent[['time', 'close']].rename(columns={'close': 'actual'}).to_dict(orient='records')
-    return jsonify({'history': history})
+@app.route('/api/models', methods=['GET'])
+def get_available_models():
+    """Get list of available prediction models"""
+    try:
+        prediction_service = PredictionService()
+        models = prediction_service.get_available_models()
+        return jsonify(create_success_response(models, "Available models retrieved successfully"))
+    except Exception as e:
+        logging.error(f"Error getting models: {e}")
+        return jsonify(create_error_response(f"Internal server error: {str(e)}")), 500
+
+@app.route('/api/symbols', methods=['GET'])
+def get_available_symbols():
+    """Get list of available cryptocurrency symbols"""
+    try:
+        history_service = HistoryService()
+        symbols = history_service.get_available_symbols()
+        return jsonify(create_success_response(symbols, "Available symbols retrieved successfully"))
+    except Exception as e:
+        logging.error(f"Error getting symbols: {e}")
+        return jsonify(create_error_response(f"Internal server error: {str(e)}")), 500
+
+@app.route('/api/predict/advanced', methods=['POST'])
+def predict_advanced():
+    """Get advanced ensemble predictions"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify(create_error_response("No data provided")), 400
+        
+        # Create prediction request
+        request_obj = PredictionRequest(
+            symbol=data.get('symbol', 'ETH'),
+            currency=data.get('currency', 'USD'),
+            steps=int(data.get('steps', 10)),
+            model='ensemble'
+        )
+        
+        # Get advanced predictions using service
+        advanced_service = AdvancedPredictionService()
+        response = advanced_service.get_advanced_predictions(request_obj)
+        
+        if response.success:
+            return jsonify(response.to_dict()), 200
+        else:
+            return jsonify(response.to_dict()), 400
+            
+    except Exception as e:
+        logging.error(f"Error in predict_advanced: {e}")
+        return jsonify(create_error_response(f"Internal server error: {str(e)}")), 500
+
+@app.route('/api/models/train', methods=['POST'])
+def train_advanced_models():
+    """Train advanced models for a symbol"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify(create_error_response("No data provided")), 400
+        
+        symbol = data.get('symbol', 'ETH')
+        currency = data.get('currency', 'USD')
+        
+        # Train advanced models
+        advanced_service = AdvancedPredictionService()
+        result = advanced_service.train_advanced_models(symbol, currency)
+        
+        if result['success']:
+            return jsonify(create_success_response(result, "Models trained successfully")), 200
+        else:
+            return jsonify(create_error_response(result['error'])), 400
+            
+    except Exception as e:
+        logging.error(f"Error training models: {e}")
+        return jsonify(create_error_response(f"Internal server error: {str(e)}")), 500
+
+@app.route('/api/models/performance', methods=['GET'])
+def get_model_performance():
+    """Get performance metrics for all models"""
+    try:
+        symbol = request.args.get('symbol', 'ETH')
+        currency = request.args.get('currency', 'USD')
+        
+        # Get model performance
+        advanced_service = AdvancedPredictionService()
+        result = advanced_service.get_model_performance(symbol, currency)
+        
+        if result['success']:
+            return jsonify(create_success_response(result, "Performance metrics retrieved successfully")), 200
+        else:
+            return jsonify(create_error_response(result['error'])), 400
+            
+    except Exception as e:
+        logging.error(f"Error getting performance: {e}")
+        return jsonify(create_error_response(f"Internal server error: {str(e)}")), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

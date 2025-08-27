@@ -1,4 +1,4 @@
-# Ignore virtual environment folders and config files
+κ# Ignore virtual environment folders and config files
 bin/
 include/
 lib/
@@ -55,3 +55,30 @@ historical_data
 historical_data_eth_usd_5min_100d
 
 node_modules
+
+# Data files and predictions
+data/
+*.csv
+*.json
+historical_data_*
+crypto_data_*
+predictions_*
+debug_*
+arima_*
+xgboost_*
+usd_only_*
+
+# Model files (only ignore the actual model files, not the Python code)
+models/*.pkl
+models/*.joblib
+*.pkl
+*.joblib
+
+# Instance and temporary files
+instance/
+.DS_Store
+*.tmp
+*.swp
+
+# Test files
+test_*.py
